@@ -26,6 +26,38 @@
       position: relative;
     }
 
+    /* 页面周围固定装饰 */
+    .deco {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .deco span {
+      position: absolute;
+      font-size: 1.6rem;
+      opacity: 0.9;
+      animation: decoFloat 5s ease-in-out infinite;
+    }
+
+    .deco .d1 { top: 10%; left: 7%; animation-delay: 0s; }
+    .deco .d2 { top: 15%; right: 8%; animation-delay: 0.8s; font-size: 1.3rem; }
+    .deco .d3 { bottom: 30%; left: 6%; animation-delay: 1.2s; }
+    .deco .d4 { bottom: 25%; right: 10%; animation-delay: 0.4s; font-size: 1.4rem; }
+    .deco .d5 { top: 40%; left: 4%; animation-delay: 2s; font-size: 1.2rem; }
+    .deco .d6 { top: 55%; right: 5%; animation-delay: 1.5s; }
+    .deco .d7 { bottom: 12%; left: 18%; animation-delay: 0.6s; }
+    .deco .d8 { bottom: 18%; right: 20%; animation-delay: 1.8s; font-size: 1.3rem; }
+
+    @keyframes decoFloat {
+      0%, 100% { transform: translateY(0) scale(1); }
+      50% { transform: translateY(-10px) scale(1.05); }
+    }
+
     /* 飘落的彩带/星星 */
     .confetti {
       position: fixed;
@@ -184,6 +216,16 @@
   </style>
 </head>
 <body>
+  <div class="deco" aria-hidden="true">
+    <span class="d1">💝</span>
+    <span class="d2">🎀</span>
+    <span class="d3">✨</span>
+    <span class="d4">💖</span>
+    <span class="d5">🎀</span>
+    <span class="d6">✨</span>
+    <span class="d7">💝</span>
+    <span class="d8">⭐</span>
+  </div>
   <div class="confetti">
     <span></span><span></span><span></span><span></span><span></span>
     <span></span><span></span><span></span><span></span>
