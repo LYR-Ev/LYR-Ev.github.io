@@ -68,6 +68,59 @@
       pointer-events: none;
     }
 
+    /* 左上角标识 */
+    .logo-wrap {
+      position: fixed;
+      top: 1rem;
+      left: 1rem;
+      z-index: 40;
+      cursor: pointer;
+    }
+
+    .logo-id {
+      width: 48px;
+      height: 48px;
+      object-fit: cover;
+      border-radius: 50%;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+      border: 2px solid rgba(255, 255, 255, 0.4);
+      display: block;
+    }
+
+    .logo-popup {
+      position: absolute;
+      top: calc(100% + 8px);
+      left: 0;
+      padding: 0.5rem 0.9rem;
+      background: rgba(255, 255, 255, 0.95);
+      color: var(--text);
+      font-family: 'ZCOOL KuaiLe', cursive;
+      font-size: 0.95rem;
+      border-radius: 12px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+      white-space: nowrap;
+      opacity: 0;
+      visibility: hidden;
+      transform: translateY(-4px);
+      transition: opacity 0.25s ease, transform 0.25s ease, visibility 0.25s ease;
+      pointer-events: none;
+    }
+
+    .logo-popup::before {
+      content: '';
+      position: absolute;
+      bottom: 100%;
+      left: 16px;
+      border: 6px solid transparent;
+      border-bottom-color: rgba(255, 255, 255, 0.95);
+    }
+
+    .logo-popup.show {
+      opacity: 1;
+      visibility: visible;
+      transform: translateY(0);
+    }
+
     /* 星空点点 */
     .stars {
       position: fixed;
@@ -505,6 +558,10 @@
   </style>
 </head>
 <body>
+  <div class="logo-wrap" id="logoWrap">
+    <img src="1.jpg" alt="我的标识" class="logo-id">
+    <div class="logo-popup" id="logoPopup">嘻嘻，我在</div>
+  </div>
   <!-- 星空背景 -->
   <div class="stars" aria-hidden="true">
     <span></span><span></span><span></span><span></span><span></span>
@@ -617,6 +674,21 @@
       eggClose.addEventListener('click', closeEgg);
       eggPopup.addEventListener('click', function (e) {
         if (e.target === eggPopup) closeEgg();
+      });
+
+      // 左上角标识：点击弹出「嘻嘻，我在」
+      var logoWrap = document.getElementById('logoWrap');
+      var logoPopup = document.getElementById('logoPopup');
+
+      logoWrap.addEventListener('click', function (e) {
+        e.stopPropagation();
+        logoPopup.classList.toggle('show');
+      });
+
+      document.addEventListener('click', function (e) {
+        if (!logoWrap.contains(e.target)) {
+          logoPopup.classList.remove('show');
+        }
       });
 
       // 3. 按钮躲鼠标 + 点击惊喜
