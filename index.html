@@ -9,7 +9,7 @@
   <!--
     字体使用说明：
     - Noto Serif SC：正文信件内容，衬线体，易读、有书写感
-    - ZCOOL KuaiLe：标题、按钮、选项，活泼圆润，适合礼物氛围
+    - ZCOOL KuaiLe：标题、按钮、选项，活泼圆润，有氛围感
     - Long Cang：称呼与落款，毛笔手写感，像信的开头与署名
   -->
   <link href="https://fonts.googleapis.com/css2?family=Long+Cang&family=Noto+Serif+SC:wght@400;600&family=ZCOOL+KuaiLe&display=swap" rel="stylesheet">
@@ -626,7 +626,7 @@
     </article>
   </main>
 
-  <!-- 音乐：将 src 改为你的音乐文件路径即可 -->
+  <!-- 音乐： src ：文件路径-->
   <audio id="bgMusic" loop>
     <source src="every-day's a new adventure.mp3" type="audio/mpeg">
   </audio>
@@ -647,7 +647,7 @@
         startLetterReveal();
       }, 2200);
 
-      // 1. 信件逐行淡入
+      //  信件逐行淡入
       function startLetterReveal() {
         var lines = document.querySelectorAll('.letter-line');
         lines.forEach(function (line) {
@@ -658,7 +658,7 @@
         });
       }
 
-      // 2. 隐藏彩蛋
+      //  隐藏彩蛋
       var eggTrigger = document.getElementById('eggTrigger');
       var eggPopup = document.getElementById('eggPopup');
       var eggClose = document.getElementById('eggClose');
@@ -676,7 +676,7 @@
         if (e.target === eggPopup) closeEgg();
       });
 
-      // 左上角标识：点击弹出「嘻嘻，我在」
+      // 左上角标识
       var logoWrap = document.getElementById('logoWrap');
       var logoPopup = document.getElementById('logoPopup');
 
@@ -691,7 +691,7 @@
         }
       });
 
-      // 3. 按钮躲鼠标 + 点击惊喜
+      // 按钮躲鼠标 + 点击惊喜
       var btnRect = { w: 0, h: 0, cx: 0, cy: 0 };
       var runRadius = 80;
       var maxMove = 28;
@@ -744,7 +744,7 @@
 
       btnMagic.addEventListener('click', onMagicClick);
 
-      // 4. 分支选择
+      // 分支选择
       var choiceBtns = document.querySelectorAll('.choice-btn');
       var replyText = document.getElementById('replyText');
       var replies = {
@@ -767,7 +767,7 @@
         });
       });
 
-      // 5. 背景音乐（默认关闭，点击播放）
+      // 背景音乐（默认关闭，点击播放）
       var bgMusic = document.getElementById('bgMusic');
       var btnMusic = document.getElementById('btnMusic');
 
