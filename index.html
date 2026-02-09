@@ -35,7 +35,7 @@
       -webkit-tap-highlight-color: transparent;
     }
 
-    /* ========== 背景：柔和星空 + 轻微动态 ========== */
+    /* ========== 背景：同目录 bg.png + 虚化 ========== */
     body {
       min-height: 100vh;
       font-family: 'Noto Serif SC', serif;
@@ -47,14 +47,25 @@
       padding: 1.5rem;
       overflow-x: hidden;
       position: relative;
-      background: linear-gradient(165deg, #1a1625 0%, #2d2440 35%, #1e1b2e 70%, #252035 100%);
-      background-size: 200% 200%;
-      animation: bgShift 18s ease-in-out infinite;
     }
 
-    @keyframes bgShift {
-      0%, 100% { background-position: 0% 50%; }
-      50% { background-position: 100% 50%; }
+    body::before {
+      content: '';
+      position: fixed;
+      inset: -20px;
+      z-index: -2;
+      background: url('bg.png') center center / cover no-repeat;
+      filter: blur(12px);
+      transform: scale(1.08);
+    }
+
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      z-index: -1;
+      background: rgba(0, 0, 0, 0.25);
+      pointer-events: none;
     }
 
     /* 星空点点 */
@@ -101,8 +112,26 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      background: linear-gradient(165deg, #1a1625 0%, #2d2440 100%);
+      background: transparent;
       transition: opacity 0.8s ease, visibility 0.8s ease;
+    }
+
+    .intro::before {
+      content: '';
+      position: absolute;
+      inset: -20px;
+      z-index: -1;
+      background: url('bg.png') center center / cover no-repeat;
+      filter: blur(10px);
+      transform: scale(1.08);
+    }
+
+    .intro::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: rgba(26, 22, 37, 0.5);
+      z-index: -1;
     }
 
     .intro.hidden {
