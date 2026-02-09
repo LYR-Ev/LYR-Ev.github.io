@@ -3,224 +3,335 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>惊喜盒子</title>
+  <title>小惊喜来啦！</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600&family=ZCOOL+KuaiLe&display=swap" rel="stylesheet">
   <style>
+    /* ========== 基础与变量 ========== */
     * {
       margin: 0;
       padding: 0;
       box-sizing: border-box;
     }
 
+    :root {
+      --bg: #fff8f5;
+      --card: #fffefc;
+      --accent: #e8b4b8;
+      --accent-deep: #d4a0a5;
+      --text: #4a4541;
+      --text-soft: #7a756f;
+      --shadow: rgba(180, 140, 140, 0.15);
+      --radius: 20px;
+    }
+
+    html {
+      font-size: clamp(14px, 2.2vw, 18px);
+      -webkit-tap-highlight-color: transparent;
+    }
+
     body {
       min-height: 100vh;
+      font-family: 'Noto Serif SC', serif;
+      background: var(--bg);
+      color: var(--text);
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      font-family: 'ZCOOL KuaiLe', cursive, sans-serif;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
-      padding: 1rem;
-      overflow: hidden;
+      padding: 1.5rem;
+      overflow-x: hidden;
       position: relative;
     }
 
-    /* 页面周围装饰 */
-    .deco {
+    /* ========== 开场：遮罩与标题 ========== */
+    .intro {
       position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
+      inset: 0;
+      z-index: 100;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(160deg, #fdf2ed 0%, #fce8e4 50%, #f8e0dc 100%);
+      transition: opacity 0.8s ease, visibility 0.8s ease;
+    }
+
+    .intro.hidden {
+      opacity: 0;
+      visibility: hidden;
       pointer-events: none;
-      z-index: 0;
     }
 
-    .deco span {
-      position: absolute;
-      font-size: 1.8rem;
-      opacity: 0.85;
-      animation: float 4s ease-in-out infinite;
+    .intro-text {
+      font-family: 'ZCOOL KuaiLe', cursive;
+      font-size: clamp(1.4rem, 4vw, 1.8rem);
+      color: var(--text);
+      letter-spacing: 0.2em;
+      opacity: 0;
+      animation: introFade 1.2s ease 0.3s forwards;
     }
 
-    .deco .d1 { top: 12%; left: 8%; animation-delay: 0s; }
-    .deco .d2 { top: 18%; right: 10%; animation-delay: 0.5s; font-size: 1.4rem; }
-    .deco .d3 { top: 45%; left: 5%; animation-delay: 1s; font-size: 1.2rem; }
-    .deco .d4 { top: 50%; right: 6%; animation-delay: 1.5s; }
-    .deco .d5 { bottom: 25%; left: 12%; animation-delay: 0.3s; font-size: 1.5rem; }
-    .deco .d6 { bottom: 20%; right: 15%; animation-delay: 0.8s; }
-    .deco .d7 { top: 8%; left: 25%; animation-delay: 1.2s; font-size: 1.3rem; }
-    .deco .d8 { top: 35%; right: 8%; animation-delay: 0.2s; }
-    .deco .d9 { bottom: 35%; left: 8%; animation-delay: 1.8s; font-size: 1.4rem; }
-    .deco .d10 { bottom: 15%; right: 25%; animation-delay: 0.6s; }
-    .deco .d11 { top: 22%; left: 15%; animation-delay: 2s; font-size: 1.1rem; }
-    .deco .d12 { bottom: 40%; right: 12%; animation-delay: 1.3s; }
+    .intro-hint {
+      margin-top: 1.2rem;
+      font-size: 0.9rem;
+      color: var(--text-soft);
+      opacity: 0;
+      animation: introFade 0.8s ease 1s forwards;
+    }
 
-    @keyframes float {
-      0%, 100% { transform: translateY(0) rotate(0deg); }
-      50% { transform: translateY(-12px) rotate(8deg); }
+    @keyframes introFade {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ========== 主卡片容器 ========== */
+    .page {
+      max-width: 520px;
+      width: 100%;
+      opacity: 0;
+      transform: scale(0.92) translateY(20px);
+      transition: opacity 0.9s ease 0.2s, transform 0.9s ease 0.2s;
+    }
+
+    .page.visible {
+      opacity: 1;
+      transform: scale(1) translateY(0);
     }
 
     .card {
+      background: var(--card);
+      border-radius: var(--radius);
+      box-shadow: 0 20px 60px var(--shadow), 0 0 0 1px rgba(232, 180, 184, 0.2);
+      padding: clamp(2rem, 5vw, 3rem);
       position: relative;
-      z-index: 1;
-      background: rgba(255, 255, 255, 0.95);
-      padding: 3rem 4rem;
-      border-radius: 24px;
-      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+      overflow: hidden;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 24px 64px var(--shadow), 0 0 0 1px rgba(232, 180, 184, 0.25);
+    }
+
+    /* 卡片顶部装饰线 */
+    .card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 60%;
+      height: 4px;
+      background: linear-gradient(90deg, transparent, var(--accent), transparent);
+      border-radius: 0 0 4px 4px;
+    }
+
+    /* ========== 标题 ========== */
+    .title {
+      font-family: 'ZCOOL KuaiLe', cursive;
+      font-size: clamp(1.5rem, 4vw, 1.85rem);
+      color: var(--text);
       text-align: center;
-      max-width: 420px;
-      animation: cardIn 0.6s ease-out;
+      margin-bottom: 1.5rem;
+      font-weight: 600;
     }
 
-    @keyframes cardIn {
-      from {
-        opacity: 0;
-        transform: translateY(-20px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-
-    h1 {
-      font-size: 1.5rem;
-      color: #333;
-      margin-bottom: 2rem;
-      line-height: 1.5;
-    }
-
-    .buttons {
-      display: flex;
-      gap: 1rem;
-      justify-content: center;
-      flex-wrap: wrap;
-    }
-
-    .btn {
-      font-family: 'ZCOOL KuaiLe', cursive, sans-serif;
-      font-size: 1.2rem;
-      padding: 0.75rem 2rem;
-      border: none;
-      border-radius: 12px;
-      cursor: pointer;
-      transition: transform 0.2s, box-shadow 0.2s;
-    }
-
-    .btn:hover {
-      transform: scale(1.05);
-      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
-    }
-
-    .btn-yes {
-      background: linear-gradient(135deg, #667eea, #764ba2);
-      color: white;
-    }
-
-    .btn-no {
-      background: linear-gradient(135deg, #95a5a6, #7f8c8d);
-      color: white;
-    }
-
-    .sad-result {
-      display: none;
-      margin-top: 1.5rem;
-      font-size: 4rem;
-      animation: sadIn 0.5s ease-out;
-    }
-
-    .sad-result.show {
-      display: block;
-    }
-
-    @keyframes sadIn {
-      from {
-        opacity: 0;
-        transform: scale(0.5);
-      }
-      to {
-        opacity: 1;
-        transform: scale(1);
-      }
-    }
-
-    .sad-text {
-      font-size: 1rem;
-      color: #666;
-      margin-top: 0.5rem;
-    }
-
-    .choices {
-      display: block;
-    }
-
-    .choices.hide {
-      display: none;
-    }
-
-    .back-btn {
+    .title-emoji {
       display: inline-block;
-      margin-top: 1rem;
-      font-family: 'ZCOOL KuaiLe', cursive, sans-serif;
-      font-size: 1rem;
-      padding: 0.6rem 1.5rem;
-      background: linear-gradient(135deg, #667eea, #764ba2);
-      color: white;
-      text-decoration: none;
-      border-radius: 12px;
-      border: none;
-      cursor: pointer;
-      transition: transform 0.2s, box-shadow 0.2s;
+      margin-left: 0.2rem;
+      animation: wiggle 2s ease-in-out infinite;
     }
 
-    .back-btn:hover {
+    @keyframes wiggle {
+      0%, 100% { transform: rotate(-3deg); }
+      50% { transform: rotate(3deg); }
+    }
+
+    /* ========== 可自定义文字区域（方便你替换内容）========== */
+    .message {
+      font-size: 1rem;
+      line-height: 1.95;
+      color: var(--text);
+      text-align: left;
+      white-space: pre-line;
+      margin-bottom: 1.8rem;
+    }
+
+    .message p {
+      margin-bottom: 0.9rem;
+    }
+
+    .message p:last-child {
+      margin-bottom: 0;
+    }
+
+    /* ========== 互动按钮 ========== */
+    .action-wrap {
+      text-align: center;
+    }
+
+    .btn-magic {
+      font-family: 'ZCOOL KuaiLe', cursive;
+      font-size: 1rem;
+      padding: 0.7rem 1.8rem;
+      border: none;
+      border-radius: 999px;
+      background: linear-gradient(135deg, var(--accent) 0%, var(--accent-deep) 100%);
+      color: #fff;
+      cursor: pointer;
+      box-shadow: 0 6px 20px rgba(212, 160, 165, 0.35);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .btn-magic:hover {
       transform: scale(1.05);
-      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+      box-shadow: 0 8px 24px rgba(212, 160, 165, 0.45);
+    }
+
+    .btn-magic:active {
+      transform: scale(0.98);
+    }
+
+    /* ========== 点击彩蛋：漂浮小心心 ========== */
+    .hearts-layer {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 50;
+      overflow: hidden;
+    }
+
+    .heart {
+      position: absolute;
+      font-size: 1.2rem;
+      opacity: 0;
+      animation: heartRise 2s ease-out forwards;
+    }
+
+    @keyframes heartRise {
+      0% {
+        opacity: 0.9;
+        transform: translateY(0) scale(0.6);
+      }
+      100% {
+        opacity: 0;
+        transform: translateY(-120px) scale(1);
+      }
+    }
+
+    /* ========== 底部小装饰 ========== */
+    .footer-note {
+      margin-top: 1.5rem;
+      text-align: center;
+      font-size: 0.85rem;
+      color: var(--text-soft);
+    }
+
+    .footer-note span {
+      display: inline-block;
+      margin: 0 0.2rem;
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    .footer-note span:nth-child(1) { animation-delay: 0s; }
+    .footer-note span:nth-child(2) { animation-delay: 0.3s; }
+    .footer-note span:nth-child(3) { animation-delay: 0.6s; }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 0.7; transform: scale(1); }
+      50% { opacity: 1; transform: scale(1.1); }
+    }
+
+    /* ========== 响应式 ========== */
+    @media (max-width: 480px) {
+      .card {
+        padding: 1.75rem 1.5rem;
+      }
+
+      .message {
+        font-size: 0.95rem;
+      }
     }
   </style>
 </head>
 <body>
-  <div class="deco" aria-hidden="true">
-    <span class="d1">✨</span>
-    <span class="d2">🎀</span>
-    <span class="d3">💝</span>
-    <span class="d4">✨</span>
-    <span class="d5">🎀</span>
-    <span class="d6">💝</span>
-    <span class="d7">⭐</span>
-    <span class="d8">✨</span>
-    <span class="d9">🎀</span>
-    <span class="d10">⭐</span>
-    <span class="d11">💝</span>
-    <span class="d12">✨</span>
+  <!-- 开场层：进入后自动淡出 -->
+  <div class="intro" id="intro">
+    <p class="intro-text">送你一个小惊喜</p>
+    <p class="intro-hint">正在打开...</p>
   </div>
-  <div class="card">
-    <div class="choices" id="choices">
-      <h1>是否打开你的惊喜盒子？</h1>
-      <div class="buttons">
-        <button class="btn btn-yes" id="btnYes">是</button>
-        <button class="btn btn-no" id="btnNo">否</button>
+
+  <!-- 点击飘心彩蛋层 -->
+  <div class="hearts-layer" id="heartsLayer"></div>
+
+  <!-- 主内容 -->
+  <main class="page" id="mainPage">
+    <article class="card" id="card">
+      <h1 class="title">给你的小纸条 <span class="title-emoji">✨</span></h1>
+
+      <!-- 👇 下面这段可以随意改成你想对朋友说的话 -->
+      <div class="message">
+        <p>很高兴能和你做朋友</p>
+        <p>希望你在平凡的日子里，也能常常发现小确幸。累了就休息，开心就大笑，永远有人站在你这边。</p>
+        <p>祝你今天开心，明天开心，天天都开心～</p>
       </div>
-    </div>
-    <div class="sad-result" id="sadResult">
-      <span aria-hidden="true">😢</span>
-      <p class="sad-text">好遗憾呀～</p>
-      <a href="index.html" class="back-btn">返回</a>
-    </div>
-  </div>
+
+      <div class="action-wrap">
+        <button type="button" class="btn-magic" id="btnMagic">点我有小心心</button>
+      </div>
+
+      <p class="footer-note">
+        <span>❤</span><span>️</span><span>❤️</span>
+      </p>
+    </article>
+  </main>
 
   <script>
-    document.getElementById('btnYes').addEventListener('click', function () {
-      window.location.href = 'gift.html';
-    });
+    (function () {
+      // 开场：2 秒后淡出，显示主卡片
+      var intro = document.getElementById('intro');
+      var mainPage = document.getElementById('mainPage');
 
-    document.getElementById('btnNo').addEventListener('click', function () {
-      document.getElementById('choices').classList.add('hide');
-      document.getElementById('sadResult').classList.add('show');
-    });
+      setTimeout(function () {
+        intro.classList.add('hidden');
+        mainPage.classList.add('visible');
+      }, 2200);
+
+      // 彩蛋：点击按钮或卡片时飘出小心心
+      var heartsLayer = document.getElementById('heartsLayer');
+      var card = document.getElementById('card');
+      var btnMagic = document.getElementById('btnMagic');
+      var hearts = ['❤️', '💕', '💗', '💖', '🌸', '✨'];
+
+      function createHeart(x, y) {
+        var el = document.createElement('span');
+        el.className = 'heart';
+        el.textContent = hearts[Math.floor(Math.random() * hearts.length)];
+        el.style.left = x + 'px';
+        el.style.top = y + 'px';
+        heartsLayer.appendChild(el);
+        setTimeout(function () { el.remove(); }, 2100);
+      }
+
+      function onTap(e) {
+        var x = (e.clientX || e.touches?.[0]?.clientX) ?? 0;
+        var y = (e.clientY || e.touches?.[0]?.clientY) ?? 0;
+        var count = 0;
+        var t = setInterval(function () {
+          createHeart(x + (Math.random() - 0.5) * 40, y);
+          count++;
+          if (count >= 6) clearInterval(t);
+        }, 80);
+      }
+
+      btnMagic.addEventListener('click', onTap);
+      card.addEventListener('click', function (e) {
+        if (e.target === btnMagic) return;
+        onTap(e);
+      });
+    })();
   </script>
 </body>
 </html>
