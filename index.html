@@ -28,6 +28,11 @@
       --text-soft: #7a756f;
       --shadow: rgba(80, 60, 90, 0.2);
       --radius: 20px;
+      /* 信封可点击区域坐标（可改为 px，如 200px） */
+      --env-top: 85%;
+      --env-left: 25%;
+      --env-width: 20%;
+      --env-height: 10%;
     }
 
     html {
@@ -66,6 +71,13 @@
       z-index: -1;
       background: rgba(0, 0, 0, 0.25);
       pointer-events: none;
+    }
+
+    /* 展开信件时使用 bg2.png 虚化背景 */
+    body.bg2-blur::before {
+      background-image: url('bg2.png');
+      filter: blur(12px);
+      transform: scale(1.08);
     }
 
     /* 左上角标识：初始页与信件页均显示 */
@@ -228,7 +240,83 @@
       transform: scale(0.98);
     }
 
-    /* ========== 主区域：点击「探索小屋」后慢慢展开 ========== */
+    /* ========== 房间视图：点击探索小屋后显示 bg2.png 清晰背景 ========== */
+    .room-view {
+      position: fixed;
+      inset: 0;
+      z-index: 50;
+      transition: opacity 0.5s ease, visibility 0.5s ease;
+    }
+
+    .room-view.hidden {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+
+    .room-view::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      z-index: -1;
+      background: url('bg2.png') center center / cover no-repeat;
+      filter: none;
+      transform: none;
+      -webkit-backface-visibility: hidden;
+      backface-visibility: hidden;
+    }
+
+    /*
+      信封可点击区域：修改下面四个变量可调整到图中桌面信封位置
+      --env-top: 距顶部的距离（% 或 px）
+      --env-left: 距左侧的距离（% 或 px）
+      --env-width: 区域宽度（% 或 px）
+      --env-height: 区域高度（% 或 px）
+    */
+    .envelope-hotspot {
+      position: absolute;
+      top: var(--env-top, 38%);
+      left: var(--env-left, 32%);
+      width: var(--env-width, 28%);
+      height: var(--env-height, 22%);
+      cursor: pointer;
+      z-index: 1;
+    }
+
+    .envelope-hotspot:hover {
+      outline: 2px dashed rgba(255, 255, 255, 0.4);
+      outline-offset: 4px;
+    }
+
+    /* 虚线框右上角气泡提示 */
+    .envelope-bubble {
+      position: absolute;
+      top: 0;
+      right: 0;
+      transform: translateY(-100%) translateX(0);
+      margin-top: -8px;
+      margin-right: -4px;
+      padding: 0.45rem 0.75rem;
+      font-family: 'ZCOOL KuaiLe', cursive;
+      font-size: 0.85rem;
+      color: var(--text);
+      background: rgba(255, 255, 255, 0.96);
+      border-radius: 10px;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+      white-space: nowrap;
+      pointer-events: none;
+    }
+
+    .envelope-bubble::after {
+      content: '';
+      position: absolute;
+      top: 100%;
+      right: 12px;
+      border: 6px solid transparent;
+      border-top-color: rgba(255, 255, 255, 0.96);
+    }
+
+    /* ========== 主区域：点击虚线框内即缓慢展开信件 ========== */
     .page {
       max-width: 520px;
       width: 100%;
@@ -608,6 +696,13 @@
     <button type="button" class="intro-btn" id="introBtn">探索小屋</button>
   </div>
 
+  <!-- 房间视图：bg2.png 清晰，点击桌上信封区域后弹出「展开信封」 -->
+  <div class="room-view hidden" id="roomView">
+    <div class="envelope-hotspot" id="envelopeHotspot">
+      <span class="envelope-bubble">点击信封展开信件</span>
+    </div>
+  </div>
+
   <div class="hearts-layer" id="heartsLayer"></div>
 
   <!-- 隐藏彩蛋触发点 -->
@@ -679,10 +774,19 @@
       var heartsLayer = document.getElementById('heartsLayer');
       var hearts = ['❤️', '💕', '💗', '💖', '🌸', '✨'];
 
-      // 开场：仅背景 +「探索小屋」按钮，点击后才展开信件
-      var introBtn = document.getElementById('introBtn');
+      // 点击探索小屋：进入房间视图（bg2.png 清晰），不直接展开信件
+      var roomView = document.getElementById('roomView');
+      var envelopeHotspot = document.getElementById('envelopeHotspot');
+
       introBtn.addEventListener('click', function () {
         intro.classList.add('blurring', 'hidden');
+        roomView.classList.remove('hidden');
+      });
+
+      // 点击虚线框内：直接背景改为 bg2 虚化，隐藏房间，缓慢展开信件
+      envelopeHotspot.addEventListener('click', function () {
+        document.body.classList.add('bg2-blur');
+        roomView.classList.add('hidden');
         mainPage.classList.add('visible');
         setTimeout(function () {
           startLetterReveal();
@@ -691,8 +795,10 @@
 
       var btnBack = document.getElementById('btnBack');
       btnBack.addEventListener('click', function () {
+        document.body.classList.remove('bg2-blur');
         intro.classList.remove('blurring', 'hidden');
         mainPage.classList.remove('visible');
+        roomView.classList.add('hidden');
         document.querySelectorAll('.letter-line').forEach(function (line) {
           line.classList.remove('visible');
         });
