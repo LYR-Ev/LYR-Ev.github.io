@@ -68,12 +68,12 @@
       pointer-events: none;
     }
 
-    /* 左上角标识 */
+    /* 左上角标识：初始页与信件页均显示 */
     .logo-wrap {
       position: fixed;
       top: 1rem;
       left: 1rem;
-      z-index: 40;
+      z-index: 110;
       cursor: pointer;
     }
 
@@ -172,10 +172,20 @@
     .intro::before {
       content: '';
       position: absolute;
-      inset: -20px;
+      inset: 0;
       z-index: -1;
       background: url('bg.png') center center / cover no-repeat;
-      filter: blur(10px);
+      filter: none;
+      transform: none;
+      transition: filter 1s ease, transform 1s ease;
+      image-rendering: auto;
+      -webkit-backface-visibility: hidden;
+      backface-visibility: hidden;
+    }
+
+    .intro.blurring::before {
+      inset: -20px;
+      filter: blur(12px);
       transform: scale(1.08);
     }
 
@@ -191,39 +201,42 @@
       opacity: 0;
       visibility: hidden;
       pointer-events: none;
+      transition: opacity 0.9s ease, visibility 0.9s ease;
     }
 
-    .intro-text {
+    .intro-btn {
       font-family: 'ZCOOL KuaiLe', cursive;
-      font-size: clamp(1.4rem, 4vw, 1.8rem);
-      color: #f5e6e8;
-      letter-spacing: 0.2em;
-      opacity: 0;
-      animation: introFade 1.2s ease 0.3s forwards;
+      font-size: clamp(0.9rem, 2.6vw, 1.1rem);
+      padding: 0.5rem 1.25rem;
+      border: none;
+      border-radius: 999px;
+      background: linear-gradient(135deg, #d4a0b8 0%, #b898d0 50%, #a88ac4 100%);
+      color: #fff;
+      cursor: pointer;
+      letter-spacing: 0.12em;
+      transition: transform 0.2s ease, box-shadow 0.3s ease, filter 0.2s ease;
+      box-shadow: 0 4px 20px rgba(168, 138, 196, 0.45);
     }
 
-    .intro-hint {
-      margin-top: 1.2rem;
-      font-size: 0.9rem;
-      color: rgba(245, 230, 232, 0.7);
-      opacity: 0;
-      animation: introFade 0.8s ease 1s forwards;
+    .intro-btn:hover {
+      transform: scale(1.06);
+      box-shadow: 0 6px 24px rgba(168, 138, 196, 0.55);
+      filter: brightness(1.08);
     }
 
-    @keyframes introFade {
-      from { opacity: 0; transform: translateY(10px); }
-      to { opacity: 1; transform: translateY(0); }
+    .intro-btn:active {
+      transform: scale(0.98);
     }
 
-    /* ========== 主区域 ========== */
+    /* ========== 主区域：点击「探索小屋」后慢慢展开 ========== */
     .page {
       max-width: 520px;
       width: 100%;
       position: relative;
       z-index: 1;
       opacity: 0;
-      transform: scale(0.95) translateY(15px);
-      transition: opacity 0.9s ease 0.2s, transform 0.9s ease 0.2s;
+      transform: scale(0.88) translateY(24px);
+      transition: opacity 1s ease, transform 1s ease;
     }
 
     .page.visible {
@@ -417,6 +430,29 @@
       background: rgba(232, 180, 184, 0.15);
     }
 
+    .back-wrap {
+      text-align: center;
+      margin-top: 1rem;
+    }
+
+    .btn-back {
+      font-family: 'ZCOOL KuaiLe', cursive;
+      font-size: 0.9rem;
+      padding: 0.5rem 1.2rem;
+      border: 1px solid var(--text-soft);
+      border-radius: 999px;
+      background: transparent;
+      color: var(--text-soft);
+      cursor: pointer;
+      transition: color 0.2s, border-color 0.2s, background 0.2s;
+    }
+
+    .btn-back:hover {
+      color: var(--text);
+      border-color: var(--accent);
+      background: rgba(232, 180, 184, 0.12);
+    }
+
     /* ========== 隐藏彩蛋：初始不可见，点击后出现 ========== */
     .egg-trigger {
       position: fixed;
@@ -569,8 +605,7 @@
   </div>
 
   <div class="intro" id="intro">
-    <p class="intro-text">送你一个小惊喜</p>
-    <p class="intro-hint">正在打开...</p>
+    <button type="button" class="intro-btn" id="introBtn">探索小屋</button>
   </div>
 
   <div class="hearts-layer" id="heartsLayer"></div>
@@ -620,6 +655,10 @@
         <button type="button" class="btn-music" id="btnMusic">🎵 打开背景音乐</button>
       </div>
 
+      <div class="back-wrap">
+        <button type="button" class="btn-back" id="btnBack">返回</button>
+      </div>
+
       <p class="footer-note">
         <span>❤</span><span>️</span><span>❤️</span>
       </p>
@@ -640,21 +679,37 @@
       var heartsLayer = document.getElementById('heartsLayer');
       var hearts = ['❤️', '💕', '💗', '💖', '🌸', '✨'];
 
-      // 开场
-      setTimeout(function () {
-        intro.classList.add('hidden');
+      // 开场：仅背景 +「探索小屋」按钮，点击后才展开信件
+      var introBtn = document.getElementById('introBtn');
+      introBtn.addEventListener('click', function () {
+        intro.classList.add('blurring', 'hidden');
         mainPage.classList.add('visible');
-        startLetterReveal();
-      }, 2200);
+        setTimeout(function () {
+          startLetterReveal();
+        }, 600);
+      });
 
-      //  信件逐行淡入
+      var btnBack = document.getElementById('btnBack');
+      btnBack.addEventListener('click', function () {
+        intro.classList.remove('blurring', 'hidden');
+        mainPage.classList.remove('visible');
+        document.querySelectorAll('.letter-line').forEach(function (line) {
+          line.classList.remove('visible');
+        });
+        document.querySelectorAll('.choice-btn').forEach(function (btn) {
+          btn.classList.remove('chosen');
+        });
+        var replyText = document.getElementById('replyText');
+        if (replyText) { replyText.textContent = ''; replyText.classList.remove('show'); }
+      });
+
       function startLetterReveal() {
         var lines = document.querySelectorAll('.letter-line');
         lines.forEach(function (line) {
-          var delay = parseInt(line.getAttribute('data-delay') || 0, 10) * 480;
+          var delay = parseInt(line.getAttribute('data-delay') || 0, 10) * 520;
           setTimeout(function () {
             line.classList.add('visible');
-          }, 400 + delay);
+          }, 300 + delay);
         });
       }
 
