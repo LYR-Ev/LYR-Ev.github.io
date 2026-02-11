@@ -3,16 +3,15 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>小惊喜来啦！</title>
+  <title>小屋探索</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <!--
     字体使用说明：
-    - Noto Serif SC：正文信件内容，衬线体，易读、有书写感
-    - ZCOOL KuaiLe：标题、按钮、选项，活泼圆润，有氛围感
-    - Long Cang：称呼与落款，毛笔手写感，像信的开头与署名
+    - Ma Shan Zheng：信件全文书写体（手写感）
+    - ZCOOL KuaiLe：右上角音乐等
   -->
-  <link href="https://fonts.googleapis.com/css2?family=Long+Cang&family=Noto+Serif+SC:wght@400;600&family=ZCOOL+KuaiLe&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Long+Cang&family=Ma+Shan+Zheng&family=Noto+Serif+SC:wght@400;600&family=ZCOOL+KuaiLe&display=swap" rel="stylesheet">
   <style>
     * {
       margin: 0;
@@ -33,6 +32,11 @@
       --env-left: 25%;
       --env-width: 20%;
       --env-height: 10%;
+      /* 门口可点击区域坐标（初始页点击进入小屋） */
+      --door-top: 38%;
+      --door-left: 30%;
+      --door-width: 18%;
+      --door-height: 43%;
     }
 
     html {
@@ -168,19 +172,16 @@
       50% { opacity: 0.8; transform: scale(1.2); }
     }
 
-    /* ========== 开场 ========== */
+    /* ========== 开场：初始页无任何虚化，背景最清晰 ========== */
     .intro {
       position: fixed;
       inset: 0;
       z-index: 100;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
       background: transparent;
       transition: opacity 0.8s ease, visibility 0.8s ease;
     }
 
+    /* 初始页 bg.png：不虚化，无 scale，保证最清晰 */
     .intro::before {
       content: '';
       position: absolute;
@@ -195,6 +196,7 @@
       backface-visibility: hidden;
     }
 
+    /* 仅点击门口后、淡出时临时虚化，初始状态不应用 */
     .intro.blurring::before {
       inset: -20px;
       filter: blur(12px);
@@ -205,7 +207,7 @@
       content: '';
       position: absolute;
       inset: 0;
-      background: rgba(26, 22, 37, 0.5);
+      background: rgba(26, 22, 37, 0.35);
       z-index: -1;
     }
 
@@ -216,31 +218,47 @@
       transition: opacity 0.9s ease, visibility 0.9s ease;
     }
 
-    .intro-btn {
-      font-family: 'ZCOOL KuaiLe', cursive;
-      font-size: clamp(0.9rem, 2.6vw, 1.1rem);
-      padding: 0.5rem 1.25rem;
-      border: none;
-      border-radius: 999px;
-      background: linear-gradient(135deg, #d4a0b8 0%, #b898d0 50%, #a88ac4 100%);
-      color: #fff;
+    /* 门口可点击区域：虚线框 + 气泡「点击门口探索小屋」 */
+    .door-hotspot {
+      position: absolute;
+      top: var(--door-top, 35%);
+      left: var(--door-left, 38%);
+      width: var(--door-width, 24%);
+      height: var(--door-height, 28%);
       cursor: pointer;
-      letter-spacing: 0.12em;
-      transition: transform 0.2s ease, box-shadow 0.3s ease, filter 0.2s ease;
-      box-shadow: 0 4px 20px rgba(168, 138, 196, 0.45);
+      z-index: 1;
     }
 
-    .intro-btn:hover {
-      transform: scale(1.06);
-      box-shadow: 0 6px 24px rgba(168, 138, 196, 0.55);
-      filter: brightness(1.08);
+    /* 门口区域不显示虚线框，仅保留可点击；气泡仍提示「点击门口探索小屋」 */
+
+    .door-bubble {
+      position: absolute;
+      top: 0;
+      right: 0;
+      transform: translateY(-100%) translateX(0);
+      margin-top: -8px;
+      margin-right: -4px;
+      padding: 0.45rem 0.75rem;
+      font-family: 'ZCOOL KuaiLe', cursive;
+      font-size: 0.85rem;
+      color: #fff;
+      background: rgba(0, 0, 0, 0.5);
+      border-radius: 10px;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+      white-space: nowrap;
+      pointer-events: none;
     }
 
-    .intro-btn:active {
-      transform: scale(0.98);
+    .door-bubble::after {
+      content: '';
+      position: absolute;
+      top: 100%;
+      right: 12px;
+      border: 6px solid transparent;
+      border-top-color: rgba(0, 0, 0, 0.5);
     }
 
-    /* ========== 房间视图：点击探索小屋后显示 bg2.png 清晰背景 ========== */
+    /* ========== 房间视图：点击门口后显示 bg2.png 清晰背景 ========== */
     .room-view {
       position: fixed;
       inset: 0;
@@ -283,16 +301,14 @@
       z-index: 1;
     }
 
-    .envelope-hotspot:hover {
-      outline: 2px dashed rgba(255, 255, 255, 0.4);
-      outline-offset: 4px;
-    }
+    /* 虚线框不显示，仅保留可点击区域；气泡仍在右上角提示 */
+    /* .envelope-hotspot:hover { outline: ... } 已移除 */
 
     /* 虚线框右上角气泡提示 */
     .envelope-bubble {
       position: absolute;
-      top: 0;
-      right: 0;
+      top: -10px;
+      right: -10px;
       transform: translateY(-100%) translateX(0);
       margin-top: -8px;
       margin-right: -4px;
@@ -300,7 +316,7 @@
       font-family: 'ZCOOL KuaiLe', cursive;
       font-size: 0.85rem;
       color: var(--text);
-      background: rgba(255, 255, 255, 0.96);
+      background: rgba(244, 230, 181, 0.96);
       border-radius: 10px;
       box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
       white-space: nowrap;
@@ -314,6 +330,32 @@
       right: 12px;
       border: 6px solid transparent;
       border-top-color: rgba(255, 255, 255, 0.96);
+    }
+
+    /* 房间内「转到室外」：回到初始界面，粉紫色 */
+    /* 转到室外：与房间背景相衬的半透明中性色 */
+    .btn-outdoor {
+      position: absolute;
+      bottom: 5rem;
+      right: 1.5rem;
+      z-index: 10;
+      font-family: 'ZCOOL KuaiLe', cursive;
+      font-size: 0.9rem;
+      padding: 0.5rem 1.1rem;
+      border: 1px solid rgba(254, 212, 95, 0.5);
+      border-radius: 999px;
+      background: rgba(221, 187, 106, 0.694);
+      color: rgba(255, 255, 255, 0.95);
+      cursor: pointer;
+      backdrop-filter: blur(8px);
+      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.12);
+      transition: transform 0.2s ease, background 0.2s ease, border-color 0.2s ease;
+    }
+
+    .btn-outdoor:hover {
+      transform: scale(1.04);
+      background: rgba(255, 255, 255, 0.4);   
+      border-color: rgba(255, 255, 255, 0.75);
     }
 
     /* ========== 主区域：点击虚线框内即缓慢展开信件 ========== */
@@ -333,6 +375,7 @@
     }
 
     .card {
+      font-family: 'Ma Shan Zheng', 'Long Cang', cursive;
       background: var(--card);
       border-radius: var(--radius);
       box-shadow: 0 20px 60px var(--shadow), 0 0 0 1px rgba(232, 180, 184, 0.15);
@@ -340,6 +383,12 @@
       position: relative;
       overflow: visible;
       transition: box-shadow 0.3s ease;
+    }
+
+    .card .choice-btn,
+    .card .btn-magic,
+    .card .btn-back {
+      font-family: 'Ma Shan Zheng', 'Long Cang', cursive;
     }
 
     .card:hover {
@@ -358,9 +407,7 @@
       border-radius: 0 0 4px 4px;
     }
 
-    /* ========== 标题（ZCOOL KuaiLe）========== */
     .title {
-      font-family: 'ZCOOL KuaiLe', cursive;
       font-size: clamp(1.4rem, 4vw, 1.75rem);
       color: var(--text);
       text-align: center;
@@ -374,7 +421,6 @@
     }
 
     .choice-label {
-      font-family: 'Noto Serif SC', serif;
       font-size: 0.95rem;
       color: var(--text-soft);
       margin-bottom: 0.6rem;
@@ -388,7 +434,6 @@
     }
 
     .choice-btn {
-      font-family: 'ZCOOL KuaiLe', cursive;
       font-size: 0.9rem;
       padding: 0.45rem 1rem;
       border: 1px solid var(--accent);
@@ -410,10 +455,8 @@
       border-color: transparent;
     }
 
-    /* 选择后的回复文案（Noto Serif SC）*/
     .choice-reply {
       margin-top: 0.8rem;
-      font-family: 'Noto Serif SC', serif;
       font-size: 0.95rem;
       color: var(--text);
       line-height: 1.7;
@@ -439,7 +482,6 @@
     }
 
     .letter-line {
-      font-family: 'Noto Serif SC', serif;
       font-size: 1rem;
       line-height: 2;
       color: var(--text);
@@ -454,11 +496,10 @@
     }
 
     .letter-line .handwritten {
-      font-family: 'Long Cang', cursive;
       font-size: 1.15em;
     }
 
-    /* ========== 惊喜按钮：会躲鼠标 + 点击惊喜（ZCOOL KuaiLe）========== */
+    /* ========== 惊喜按钮：会躲鼠标 + 点击惊喜 ========== */
     .action-wrap {
       text-align: center;
       margin-top: 1.8rem;
@@ -466,7 +507,6 @@
     }
 
     .btn-magic {
-      font-family: 'ZCOOL KuaiLe', cursive;
       font-size: 1rem;
       padding: 0.7rem 1.8rem;
       border: none;
@@ -488,34 +528,35 @@
       transform: scale(0.97);
     }
 
-    /* ========== 背景音乐按钮 ========== */
-    .music-wrap {
-      text-align: center;
-      margin-top: 1rem;
+    /* ========== 背景音乐：右上角固定，始终存在 ========== */
+    .music-fixed {
+      position: fixed;
+      top: 1rem;
+      right: 1rem;
+      z-index: 110;
     }
 
     .btn-music {
       font-family: 'ZCOOL KuaiLe', cursive;
       font-size: 0.85rem;
-      padding: 0.4rem 1rem;
-      border: 1px solid var(--text-soft);
+      padding: 0.45rem 1rem;
+      border: 1px solid rgba(255, 255, 255, 0.5);
       border-radius: 999px;
-      background: transparent;
-      color: var(--text-soft);
+      background: rgba(255, 255, 255, 0.18);
+      color: rgba(255, 255, 255, 0.95);
       cursor: pointer;
       transition: color 0.2s, border-color 0.2s, background 0.2s;
     }
 
     .btn-music:hover {
-      color: var(--text);
-      border-color: var(--accent);
-      background: rgba(232, 180, 184, 0.1);
+      background: rgba(255, 255, 255, 0.28);
+      border-color: rgba(255, 255, 255, 0.8);
     }
 
     .btn-music.playing {
-      color: var(--accent-deep);
-      border-color: var(--accent);
-      background: rgba(232, 180, 184, 0.15);
+      background: rgba(232, 180, 184, 0.5);
+      border-color: rgba(255, 255, 255, 0.6);
+      color: #fff;
     }
 
     .back-wrap {
@@ -524,7 +565,6 @@
     }
 
     .btn-back {
-      font-family: 'ZCOOL KuaiLe', cursive;
       font-size: 0.9rem;
       padding: 0.5rem 1.2rem;
       border: 1px solid var(--text-soft);
@@ -686,6 +726,11 @@
     <img src="1.jpg" alt="我的标识" class="logo-id">
     <div class="logo-popup" id="logoPopup">嘻嘻，我在</div>
   </div>
+
+  <div class="music-fixed">
+    <button type="button" class="btn-music" id="btnMusic">🎵 打开背景音乐</button>
+  </div>
+
   <!-- 星空背景 -->
   <div class="stars" aria-hidden="true">
     <span></span><span></span><span></span><span></span><span></span>
@@ -693,7 +738,9 @@
   </div>
 
   <div class="intro" id="intro">
-    <button type="button" class="intro-btn" id="introBtn">探索小屋</button>
+    <div class="door-hotspot" id="doorHotspot">
+      <span class="door-bubble">点击门口探索小屋</span>
+    </div>
   </div>
 
   <!-- 房间视图：bg2.png 清晰，点击桌上信封区域后弹出「展开信封」 -->
@@ -701,6 +748,7 @@
     <div class="envelope-hotspot" id="envelopeHotspot">
       <span class="envelope-bubble">点击信封展开信件</span>
     </div>
+    <button type="button" class="btn-outdoor" id="btnOutdoor">转到室外</button>
   </div>
 
   <div class="hearts-layer" id="heartsLayer"></div>
@@ -746,10 +794,6 @@
         <button type="button" class="btn-magic" id="btnMagic">点我有小心心</button>
       </div>
 
-      <div class="music-wrap">
-        <button type="button" class="btn-music" id="btnMusic">🎵 打开背景音乐</button>
-      </div>
-
       <div class="back-wrap">
         <button type="button" class="btn-back" id="btnBack">返回</button>
       </div>
@@ -774,11 +818,12 @@
       var heartsLayer = document.getElementById('heartsLayer');
       var hearts = ['❤️', '💕', '💗', '💖', '🌸', '✨'];
 
-      // 点击探索小屋：进入房间视图（bg2.png 清晰），不直接展开信件
+      // 点击门口虚线框：进入房间视图（bg2.png 清晰）
       var roomView = document.getElementById('roomView');
       var envelopeHotspot = document.getElementById('envelopeHotspot');
+      var doorHotspot = document.getElementById('doorHotspot');
 
-      introBtn.addEventListener('click', function () {
+      doorHotspot.addEventListener('click', function () {
         intro.classList.add('blurring', 'hidden');
         roomView.classList.remove('hidden');
       });
@@ -793,12 +838,12 @@
         }, 600);
       });
 
+      // 信件页「返回」：回到 bg2 房间，可重新点击信封展开
       var btnBack = document.getElementById('btnBack');
       btnBack.addEventListener('click', function () {
         document.body.classList.remove('bg2-blur');
-        intro.classList.remove('blurring', 'hidden');
         mainPage.classList.remove('visible');
-        roomView.classList.add('hidden');
+        roomView.classList.remove('hidden');
         document.querySelectorAll('.letter-line').forEach(function (line) {
           line.classList.remove('visible');
         });
@@ -807,6 +852,13 @@
         });
         var replyText = document.getElementById('replyText');
         if (replyText) { replyText.textContent = ''; replyText.classList.remove('show'); }
+      });
+
+      // 房间内「转到室外」：回到初始界面（bg.png + 探索小屋）
+      var btnOutdoor = document.getElementById('btnOutdoor');
+      btnOutdoor.addEventListener('click', function () {
+        intro.classList.remove('blurring', 'hidden');
+        roomView.classList.add('hidden');
       });
 
       function startLetterReveal() {
