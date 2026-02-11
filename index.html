@@ -528,7 +528,7 @@
       transform: scale(0.97);
     }
 
-    /* ========== 背景音乐：右上角固定，始终存在 ========== */
+    /* ========== 背景音乐：与标识同大的圆形旋钮，悬停展开文字 ========== */
     .music-fixed {
       position: fixed;
       top: 1rem;
@@ -537,26 +537,68 @@
     }
 
     .btn-music {
-      font-family: 'ZCOOL KuaiLe', cursive;
-      font-size: 0.85rem;
-      padding: 0.45rem 1rem;
-      border: 1px solid rgba(255, 255, 255, 0.5);
-      border-radius: 999px;
-      background: rgba(255, 255, 255, 0.18);
-      color: rgba(255, 255, 255, 0.95);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 48px;
+      height: 48px;
+      padding: 0;
+      border: 2px solid rgba(0, 0, 0, 0.08);
+      border-radius: 50%;
+      background: #fff;
+      color: #5a5550;
       cursor: pointer;
-      transition: color 0.2s, border-color 0.2s, background 0.2s;
+      transition: width 0.3s ease, padding 0.3s ease, border-radius 0.3s ease, background 0.25s ease, border-color 0.25s ease;
+      overflow: hidden;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+      gap: 8px;
     }
 
     .btn-music:hover {
-      background: rgba(255, 255, 255, 0.28);
-      border-color: rgba(255, 255, 255, 0.8);
+      width: auto;
+      padding-left: 14px;
+      padding-right: 14px;
+      border-radius: 999px;
+      border-color: rgba(0, 0, 0, 0.12);
     }
 
     .btn-music.playing {
-      background: rgba(232, 180, 184, 0.5);
-      border-color: rgba(255, 255, 255, 0.6);
+      background: rgba(232, 180, 184, 0.85);
+      border-color: rgba(255, 255, 255, 0.5);
       color: #fff;
+    }
+
+    .btn-music-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      font-size: 1.35rem;
+      transition: transform 0.25s ease;
+    }
+
+    .btn-music.playing .btn-music-icon {
+      animation: musicSpin 2.5s linear infinite;
+    }
+
+    @keyframes musicSpin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    .btn-music-text {
+      font-family: 'ZCOOL KuaiLe', cursive;
+      font-size: 0.8rem;
+      white-space: nowrap;
+      max-width: 0;
+      opacity: 0;
+      overflow: hidden;
+      transition: max-width 0.3s ease, opacity 0.25s ease;
+    }
+
+    .btn-music:hover .btn-music-text {
+      max-width: 10em;
+      opacity: 1;
     }
 
     .back-wrap {
@@ -728,7 +770,10 @@
   </div>
 
   <div class="music-fixed">
-    <button type="button" class="btn-music" id="btnMusic">🎵 打开背景音乐</button>
+    <button type="button" class="btn-music" id="btnMusic" title="打开或关闭背景音乐">
+      <span class="btn-music-icon" aria-hidden="true">🎵</span>
+      <span class="btn-music-text" id="btnMusicText">打开背景音乐</span>
+    </button>
   </div>
 
   <!-- 星空背景 -->
@@ -984,17 +1029,18 @@
       var bgMusic = document.getElementById('bgMusic');
       var btnMusic = document.getElementById('btnMusic');
 
+      var btnMusicText = document.getElementById('btnMusicText');
       btnMusic.addEventListener('click', function () {
         if (bgMusic.paused) {
           bgMusic.play().catch(function () {
             console.log('请放入音乐文件并设置 audio 的 src');
           });
-          btnMusic.textContent = '🔊 关闭背景音乐';
           btnMusic.classList.add('playing');
+          if (btnMusicText) btnMusicText.textContent = '关闭背景音乐';
         } else {
           bgMusic.pause();
-          btnMusic.textContent = '🎵 打开背景音乐';
           btnMusic.classList.remove('playing');
+          if (btnMusicText) btnMusicText.textContent = '打开背景音乐';
         }
       });
     })();
