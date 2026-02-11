@@ -4,14 +4,30 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>小屋探索</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <!--
-    字体使用说明：
-    - Ma Shan Zheng：信件全文书写体（手写感）
-    - ZCOOL KuaiLe：右上角音乐等
-  -->
-  <link href="https://fonts.googleapis.com/css2?family=Long+Cang&family=Ma+Shan+Zheng&family=Noto+Serif+SC:wght@400;600&family=ZCOOL+KuaiLe&display=swap" rel="stylesheet">
+  <!-- 本地字体：font 文件夹 -->
+  <style>
+    @font-face {
+      font-family: 'Ma Shan Zheng';
+      src: url('font/MaShanZheng-Regular.ttf') format('truetype');
+      font-weight: normal;
+      font-style: normal;
+      font-display: swap;
+    }
+    @font-face {
+      font-family: 'Zhi Mang Xing';
+      src: url('font/ZhiMangXing-Regular.ttf') format('truetype');
+      font-weight: normal;
+      font-style: normal;
+      font-display: swap;
+    }
+    @font-face {
+      font-family: 'ZCOOL KuaiLe';
+      src: url('font/ZCOOLKuaiLe-Regular.ttf') format('truetype');
+      font-weight: normal;
+      font-style: normal;
+      font-display: swap;
+    }
+  </style>
   <style>
     * {
       margin: 0;
@@ -47,7 +63,7 @@
     /* ========== 背景：同目录 bg.png + 虚化 ========== */
     body {
       min-height: 100vh;
-      font-family: 'Noto Serif SC', serif;
+      font-family: 'ZCOOL KuaiLe', cursive;
       color: var(--text);
       display: flex;
       flex-direction: column;
@@ -375,7 +391,7 @@
     }
 
     .card {
-      font-family: 'Ma Shan Zheng', 'Long Cang', cursive;
+      font-family: 'Ma Shan Zheng', 'Zhi Mang Xing', cursive;
       background: var(--card);
       border-radius: var(--radius);
       box-shadow: 0 20px 60px var(--shadow), 0 0 0 1px rgba(232, 180, 184, 0.15);
@@ -388,7 +404,7 @@
     .card .choice-btn,
     .card .btn-magic,
     .card .btn-back {
-      font-family: 'Ma Shan Zheng', 'Long Cang', cursive;
+      font-family: 'Ma Shan Zheng', 'Zhi Mang Xing', cursive;
     }
 
     .card:hover {
@@ -415,7 +431,7 @@
       font-weight: 600;
     }
 
-    /* ========== 分支选择（ZCOOL KuaiLe）========== */
+    /* ========== 分支选择（Zhi Mang Xing）========== */
     .choice-section {
       margin-bottom: 1.5rem;
     }
@@ -474,7 +490,7 @@
       transform: translateY(0);
     }
 
-    /* ========== 信件正文：逐行淡入（Noto Serif SC）========== */
+    /* ========== 信件正文：逐行淡入（Ma Shan Zheng）========== */
     .letter {
       margin-top: 1.2rem;
       padding-top: 1rem;
