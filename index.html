@@ -226,6 +226,10 @@
       will-change: transform;
       transform: translate(var(--intro-dx, 0), var(--intro-dy, 0));
     }
+    /* 拖拽时关闭位移过渡，否则拖起来很沉 */
+    .intro-pan.dragging .intro-pan-content {
+      transition: filter 1s ease;
+    }
     .intro-pan-content .pan-bg-img {
       position: absolute;
       left: 0;
@@ -236,6 +240,13 @@
       pointer-events: none;
       z-index: 0;
     }
+    .intro-pan-handle {
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+      cursor: grab;
+    }
+    .intro-pan.dragging .intro-pan-handle { cursor: grabbing; }
     /* 仅点击门口后、淡出时临时虚化 */
     .intro.blurring .intro-pan-content {
       filter: blur(12px);
@@ -258,8 +269,6 @@
       height: var(--door-height, 43%);
       cursor: pointer;
       z-index: 1;
-      border: 2px dashed rgba(255, 255, 255, 0.85);
-      box-sizing: border-box;
     }
 
     .door-bubble {
@@ -335,6 +344,13 @@
       pointer-events: none;
       z-index: 0;
     }
+    .room-pan-handle {
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+      cursor: grab;
+    }
+    .room-pan.dragging .room-pan-handle { cursor: grabbing; }
 
     /* 信封可点击区域：位置与大小由 :root 的 --env-* 控制，勿改下面 fallback */
     .envelope-hotspot {
@@ -345,8 +361,6 @@
       height: var(--env-height, 10%);
       cursor: pointer;
       z-index: 1;
-      border: 2px dashed rgba(254, 212, 95, 0.9);
-      box-sizing: border-box;
     }
 
     /* 虚线框右上角气泡提示 */
@@ -830,6 +844,7 @@
     <div class="intro-pan" id="introPan">
       <div class="intro-pan-content" id="introPanContent">
         <img src="bg.jpg" alt="" class="pan-bg-img" id="introPanImg">
+        <div class="intro-pan-handle" id="introPanHandle" aria-hidden="true"></div>
         <div class="door-hotspot" id="doorHotspot">
           <span class="door-bubble">点击门口探索小屋</span>
         </div>
@@ -842,6 +857,7 @@
     <div class="room-pan" id="roomPan">
       <div class="room-pan-content" id="roomPanContent">
         <img src="bg2.jpg" alt="" class="pan-bg-img" id="roomPanImg">
+        <div class="room-pan-handle" id="roomPanHandle" aria-hidden="true"></div>
         <div class="envelope-hotspot" id="envelopeHotspot">
           <span class="envelope-bubble">点击信封展开信件</span>
         </div>
@@ -926,18 +942,13 @@
       var roomPan = document.getElementById('roomPan');
       var roomPanContent = document.getElementById('roomPanContent');
 
-      var didIntroDrag = false;
-      var didRoomDrag = false;
-      var DRAG_THRESH = 5;
-
       /**
        * 按 cover 规则计算内容尺寸，使整图可被拖拽浏览；拖拽范围限制在内容与视口内，不露空白。
-       * viewport = panEl，content = 放图的容器，img = 背景图（naturalWidth/Height 用于计算）
+       * handleEl = 仅在此层按下时开始拖拽（门口/信封在上一层，点它们不会触发拖拽）；panEl 用于 capture 和 dragging 样式
        */
-      function makePannable(panEl, contentEl, imgEl, dxKey, dyKey, setDragFlag) {
+      function makePannable(panEl, handleEl, contentEl, imgEl, dxKey, dyKey) {
         var pos = { dx: 0, dy: 0 };
         var start = { x: 0, y: 0, dx: 0, dy: 0 };
-        var moved = 0;
         var bounds = { minTx: 0, maxTx: 0, minTy: 0, maxTy: 0 };
 
         function getBounds() {
@@ -978,8 +989,6 @@
           start.y = e.clientY;
           start.dx = pos.dx;
           start.dy = pos.dy;
-          moved = 0;
-          setDragFlag(false);
           if (e.pointerId !== undefined) {
             try { panEl.setPointerCapture(e.pointerId); } catch (_) {}
           }
@@ -990,7 +999,6 @@
         function onPointerMove(e) {
           var dx = e.clientX - start.x;
           var dy = e.clientY - start.y;
-          moved = Math.sqrt(dx * dx + dy * dy);
           pos.dx = Math.max(bounds.minTx, Math.min(bounds.maxTx, start.dx + dx));
           pos.dy = Math.max(bounds.minTy, Math.min(bounds.maxTy, start.dy + dy));
           applyTransform();
@@ -1000,7 +1008,6 @@
             try { panEl.releasePointerCapture(e.pointerId); } catch (_) {}
           }
           panEl.classList.remove('dragging');
-          setDragFlag(moved > DRAG_THRESH);
           document.removeEventListener('pointermove', onPointerMove);
           document.removeEventListener('pointerup', onPointerUp);
           document.removeEventListener('pointercancel', onPointerUp);
@@ -1012,22 +1019,19 @@
           imgEl.addEventListener('load', updateBoundsAndClamp);
         }
         window.addEventListener('resize', updateBoundsAndClamp);
-        panEl.addEventListener('pointerdown', onPointerDown);
+        handleEl.addEventListener('pointerdown', onPointerDown);
       }
 
-      makePannable(introPan, introPanContent, document.getElementById('introPanImg'), '--intro-dx', '--intro-dy', function (v) { didIntroDrag = v; });
-      makePannable(roomPan, roomPanContent, document.getElementById('roomPanImg'), '--room-dx', '--room-dy', function (v) { didRoomDrag = v; });
+      makePannable(introPan, document.getElementById('introPanHandle'), introPanContent, document.getElementById('introPanImg'), '--intro-dx', '--intro-dy');
+      makePannable(roomPan, document.getElementById('roomPanHandle'), roomPanContent, document.getElementById('roomPanImg'), '--room-dx', '--room-dy');
 
       doorHotspot.addEventListener('click', function () {
-        if (didIntroDrag) { didIntroDrag = false; return; }
         intro.classList.add('blurring', 'hidden');
         roomView.classList.remove('hidden');
         setTimeout(function () { window.dispatchEvent(new Event('resize')); }, 80);
       });
 
-      // 点击虚线框内：直接背景改为 bg2 虚化，隐藏房间，缓慢展开信件
       envelopeHotspot.addEventListener('click', function () {
-        if (didRoomDrag) { didRoomDrag = false; return; }
         document.body.classList.add('bg2-blur');
         roomView.classList.add('hidden');
         mainPage.classList.add('visible');
