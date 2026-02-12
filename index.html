@@ -60,7 +60,7 @@
       -webkit-tap-highlight-color: transparent;
     }
 
-    /* ========== 背景：同目录 bg.png + 虚化 ========== */
+    /* ========== 背景：同目录 bg.jpg + 虚化 ========== */
     body {
       min-height: 100vh;
       font-family: 'ZCOOL KuaiLe', cursive;
@@ -79,7 +79,7 @@
       position: fixed;
       inset: -20px;
       z-index: -2;
-      background: url('bg.png') center center / cover no-repeat;
+      background: url('bg.jpg') center center / cover no-repeat;
       filter: blur(10px);
       transform: scale(1.08);
     }
@@ -93,9 +93,9 @@
       pointer-events: none;
     }
 
-    /* 展开信件时使用 bg2.png 虚化背景 */
+    /* 展开信件时使用 bg2.jpg 虚化背景 */
     body.bg2-blur::before {
-      background-image: url('bg2.png');
+      background-image: url('bg2.jpg');
       filter: blur(12px);
       transform: scale(1.08);
     }
@@ -197,13 +197,13 @@
       transition: opacity 0.8s ease, visibility 0.8s ease;
     }
 
-    /* 初始页 bg.png：不虚化，无 scale，保证最清晰 */
+    /* 初始页 bg.jpg：不虚化，无 scale，保证最清晰 */
     .intro::before {
       content: '';
       position: absolute;
       inset: 0;
       z-index: -1;
-      background: url('bg.png') center center / cover no-repeat;
+      background: url('bg.jpg') center center / cover no-repeat;
       filter: none;
       transform: none;
       transition: filter 1s ease, transform 1s ease;
@@ -274,7 +274,7 @@
       border-top-color: rgba(0, 0, 0, 0.5);
     }
 
-    /* ========== 房间视图：点击门口后显示 bg2.png 清晰背景 ========== */
+    /* ========== 房间视图：点击门口后显示 bg2.jpg 清晰背景 ========== */
     .room-view {
       position: fixed;
       inset: 0;
@@ -293,7 +293,7 @@
       position: absolute;
       inset: 0;
       z-index: -1;
-      background: url('bg2.png') center center / cover no-repeat;
+      background: url('bg2.jpg') center center / cover no-repeat;
       filter: none;
       transform: none;
       -webkit-backface-visibility: hidden;
@@ -804,7 +804,7 @@
     </div>
   </div>
 
-  <!-- 房间视图：bg2.png 清晰，点击桌上信封区域后弹出「展开信封」 -->
+  <!-- 房间视图：bg2.jpg 清晰，点击桌上信封区域后弹出「展开信封」 -->
   <div class="room-view hidden" id="roomView">
     <div class="envelope-hotspot" id="envelopeHotspot">
       <span class="envelope-bubble">点击信封展开信件</span>
@@ -879,7 +879,7 @@
       var heartsLayer = document.getElementById('heartsLayer');
       var hearts = ['❤️', '💕', '💗', '💖', '🌸', '✨'];
 
-      // 点击门口虚线框：进入房间视图（bg2.png 清晰）
+      // 点击门口虚线框：进入房间视图（bg2.jpg 清晰）
       var roomView = document.getElementById('roomView');
       var envelopeHotspot = document.getElementById('envelopeHotspot');
       var doorHotspot = document.getElementById('doorHotspot');
@@ -915,7 +915,7 @@
         if (replyText) { replyText.textContent = ''; replyText.classList.remove('show'); }
       });
 
-      // 房间内「转到室外」：回到初始界面（bg.png + 探索小屋）
+      // 房间内「转到室外」：回到初始界面（bg.jpg + 探索小屋）
       var btnOutdoor = document.getElementById('btnOutdoor');
       btnOutdoor.addEventListener('click', function () {
         intro.classList.remove('blurring', 'hidden');
