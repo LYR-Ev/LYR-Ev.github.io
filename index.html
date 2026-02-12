@@ -35,6 +35,10 @@
       box-sizing: border-box;
     }
 
+    /*
+      虚线框位置与大小：只改下面 :root 里的 --door-* / --env-* 即可生效。
+      保存后若未变化请强制刷新（Ctrl+F5 或 Cmd+Shift+R）。百分比相对于背景图容器。
+    */
     :root {
       --card: #fffefc;
       --accent: #e8b4b8;
@@ -43,15 +47,15 @@
       --text-soft: #7a756f;
       --shadow: rgba(80, 60, 90, 0.2);
       --radius: 20px;
-      /* 信封可点击区域坐标（可改为 px，如 200px） */
+      /* 信封虚线框：top/left 位置，width/height 大小（% 或 px） */
       --env-top: 85%;
-      --env-left: 25%;
-      --env-width: 20%;
-      --env-height: 10%;
-      /* 门口可点击区域坐标（初始页点击进入小屋） */
+      --env-left: 33%;
+      --env-width: 15%;
+      --env-height: 9%;
+      /* 门口虚线框：top/left 位置，width/height 大小（% 或 px） */
       --door-top: 38%;
-      --door-left: 30%;
-      --door-width: 18%;
+      --door-left: 37%;
+      --door-width: 12%;
       --door-height: 43%;
     }
 
@@ -188,44 +192,55 @@
       50% { opacity: 0.8; transform: scale(1.2); }
     }
 
-    /* ========== 开场：初始页无任何虚化，背景最清晰 ========== */
+    /* ========== 开场：初始页可拖动背景，门口热区随图移动 ========== */
     .intro {
       position: fixed;
       inset: 0;
       z-index: 100;
-      background: transparent;
+      background: #1a1625;
       transition: opacity 0.8s ease, visibility 0.8s ease;
     }
 
-    /* 初始页 bg.jpg：不虚化，无 scale，保证最清晰 */
-    .intro::before {
-      content: '';
+    /* 可拖动视口：只显示此区域，内容可被平移；禁止长按选中等，避免拖久出现蓝屏选区 */
+    .intro-pan {
       position: absolute;
       inset: 0;
-      z-index: -1;
-      background: url('bg.jpg') center center / cover no-repeat;
-      filter: none;
-      transform: none;
-      transition: filter 1s ease, transform 1s ease;
+      overflow: hidden;
+      cursor: grab;
+      touch-action: none;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+    }
+    .intro-pan.dragging { cursor: grabbing; }
+
+    /* 可拖动层：尺寸由 JS 按 cover 计算，保证整图可拖览且不露空白 */
+    .intro-pan-content {
+      position: absolute;
+      left: 0;
+      top: 0;
       image-rendering: auto;
       -webkit-backface-visibility: hidden;
       backface-visibility: hidden;
+      transition: filter 1s ease, transform 1s ease;
+      will-change: transform;
+      transform: translate(var(--intro-dx, 0), var(--intro-dy, 0));
     }
-
-    /* 仅点击门口后、淡出时临时虚化，初始状态不应用 */
-    .intro.blurring::before {
-      inset: -20px;
-      filter: blur(12px);
-      transform: scale(1.08);
-    }
-
-   /* .intro::after {
-      content: '';
+    .intro-pan-content .pan-bg-img {
       position: absolute;
-      inset: 0;
-      background: rgba(26, 22, 37, 0.35);
-      z-index: -1;
-    }*/
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      pointer-events: none;
+      z-index: 0;
+    }
+    /* 仅点击门口后、淡出时临时虚化 */
+    .intro.blurring .intro-pan-content {
+      filter: blur(12px);
+      transform: translate(var(--intro-dx, 0), var(--intro-dy, 0)) scale(1.08);
+    }
 
     .intro.hidden {
       opacity: 0;
@@ -234,18 +249,18 @@
       transition: opacity 0.9s ease, visibility 0.9s ease;
     }
 
-    /* 门口可点击区域：虚线框 + 气泡「点击门口探索小屋」 */
+    /* 门口可点击区域：位置与大小由 :root 的 --door-* 控制，勿改下面 fallback */
     .door-hotspot {
       position: absolute;
-      top: var(--door-top, 35%);
-      left: var(--door-left, 38%);
-      width: var(--door-width, 24%);
-      height: var(--door-height, 28%);
+      top: var(--door-top, 38%);
+      left: var(--door-left, 30%);
+      width: var(--door-width, 18%);
+      height: var(--door-height, 43%);
       cursor: pointer;
       z-index: 1;
+      border: 2px dashed rgba(255, 255, 255, 0.85);
+      box-sizing: border-box;
     }
-
-    /* 门口区域不显示虚线框，仅保留可点击；气泡仍提示「点击门口探索小屋」 */
 
     .door-bubble {
       position: absolute;
@@ -274,11 +289,12 @@
       border-top-color: rgba(0, 0, 0, 0.5);
     }
 
-    /* ========== 房间视图：点击门口后显示 bg2.jpg 清晰背景 ========== */
+    /* ========== 房间视图：可拖动背景，信封热区随图移动 ========== */
     .room-view {
       position: fixed;
       inset: 0;
       z-index: 50;
+      background: #1a1625;
       transition: opacity 0.5s ease, visibility 0.5s ease;
     }
 
@@ -288,37 +304,50 @@
       pointer-events: none;
     }
 
-    .room-view::before {
-      content: '';
+    .room-pan {
       position: absolute;
       inset: 0;
-      z-index: -1;
-      background: url('bg2.jpg') center center / cover no-repeat;
-      filter: none;
-      transform: none;
+      overflow: hidden;
+      cursor: grab;
+      touch-action: none;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+    }
+    .room-pan.dragging { cursor: grabbing; }
+
+    .room-pan-content {
+      position: absolute;
+      left: 0;
+      top: 0;
       -webkit-backface-visibility: hidden;
       backface-visibility: hidden;
+      will-change: transform;
+      transform: translate(var(--room-dx, 0), var(--room-dy, 0));
+    }
+    .room-pan-content .pan-bg-img {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      pointer-events: none;
+      z-index: 0;
     }
 
-    /*
-      信封可点击区域：修改下面四个变量可调整到图中桌面信封位置
-      --env-top: 距顶部的距离（% 或 px）
-      --env-left: 距左侧的距离（% 或 px）
-      --env-width: 区域宽度（% 或 px）
-      --env-height: 区域高度（% 或 px）
-    */
+    /* 信封可点击区域：位置与大小由 :root 的 --env-* 控制，勿改下面 fallback */
     .envelope-hotspot {
       position: absolute;
-      top: var(--env-top, 38%);
-      left: var(--env-left, 32%);
-      width: var(--env-width, 28%);
-      height: var(--env-height, 22%);
+      top: var(--env-top, 85%);
+      left: var(--env-left, 25%);
+      width: var(--env-width, 20%);
+      height: var(--env-height, 10%);
       cursor: pointer;
       z-index: 1;
+      border: 2px dashed rgba(254, 212, 95, 0.9);
+      box-sizing: border-box;
     }
-
-    /* 虚线框不显示，仅保留可点击区域；气泡仍在右上角提示 */
-    /* .envelope-hotspot:hover { outline: ... } 已移除 */
 
     /* 虚线框右上角气泡提示 */
     .envelope-bubble {
@@ -348,13 +377,12 @@
       border-top-color: rgba(255, 255, 255, 0.96);
     }
 
-    /* 房间内「转到室外」：回到初始界面，粉紫色 */
-    /* 转到室外：与房间背景相衬的半透明中性色 */
+    /* 「转到室外」：固定在视口右下角，不随背景拖动 */
     .btn-outdoor {
-      position: absolute;
+      position: fixed;
       bottom: 5rem;
       right: 1.5rem;
-      z-index: 10;
+      z-index: 60;
       font-family: 'ZCOOL KuaiLe', cursive;
       font-size: 0.9rem;
       padding: 0.5rem 1.1rem;
@@ -799,15 +827,25 @@
   </div>
 
   <div class="intro" id="intro">
-    <div class="door-hotspot" id="doorHotspot">
-      <span class="door-bubble">点击门口探索小屋</span>
+    <div class="intro-pan" id="introPan">
+      <div class="intro-pan-content" id="introPanContent">
+        <img src="bg.jpg" alt="" class="pan-bg-img" id="introPanImg">
+        <div class="door-hotspot" id="doorHotspot">
+          <span class="door-bubble">点击门口探索小屋</span>
+        </div>
+      </div>
     </div>
   </div>
 
-  <!-- 房间视图：bg2.jpg 清晰，点击桌上信封区域后弹出「展开信封」 -->
+  <!-- 房间视图：可拖动 bg2，信封热区随图；转到室外固定右下角 -->
   <div class="room-view hidden" id="roomView">
-    <div class="envelope-hotspot" id="envelopeHotspot">
-      <span class="envelope-bubble">点击信封展开信件</span>
+    <div class="room-pan" id="roomPan">
+      <div class="room-pan-content" id="roomPanContent">
+        <img src="bg2.jpg" alt="" class="pan-bg-img" id="roomPanImg">
+        <div class="envelope-hotspot" id="envelopeHotspot">
+          <span class="envelope-bubble">点击信封展开信件</span>
+        </div>
+      </div>
     </div>
     <button type="button" class="btn-outdoor" id="btnOutdoor">转到室外</button>
   </div>
@@ -883,14 +921,113 @@
       var roomView = document.getElementById('roomView');
       var envelopeHotspot = document.getElementById('envelopeHotspot');
       var doorHotspot = document.getElementById('doorHotspot');
+      var introPan = document.getElementById('introPan');
+      var introPanContent = document.getElementById('introPanContent');
+      var roomPan = document.getElementById('roomPan');
+      var roomPanContent = document.getElementById('roomPanContent');
+
+      var didIntroDrag = false;
+      var didRoomDrag = false;
+      var DRAG_THRESH = 5;
+
+      /**
+       * 按 cover 规则计算内容尺寸，使整图可被拖拽浏览；拖拽范围限制在内容与视口内，不露空白。
+       * viewport = panEl，content = 放图的容器，img = 背景图（naturalWidth/Height 用于计算）
+       */
+      function makePannable(panEl, contentEl, imgEl, dxKey, dyKey, setDragFlag) {
+        var pos = { dx: 0, dy: 0 };
+        var start = { x: 0, y: 0, dx: 0, dy: 0 };
+        var moved = 0;
+        var bounds = { minTx: 0, maxTx: 0, minTy: 0, maxTy: 0 };
+
+        function getBounds() {
+          var vw = panEl.clientWidth;
+          var vh = panEl.clientHeight;
+          var nw = imgEl.naturalWidth;
+          var nh = imgEl.naturalHeight;
+          if (!nw || !nh) return { minTx: 0, maxTx: 0, minTy: 0, maxTy: 0 };
+          var contentW = Math.max(vw, vh * nw / nh);
+          var contentH = Math.max(vh, vw * nh / nw);
+          contentEl.style.width = contentW + 'px';
+          contentEl.style.height = contentH + 'px';
+          return {
+            minTx: vw - contentW,
+            maxTx: 0,
+            minTy: vh - contentH,
+            maxTy: 0
+          };
+        }
+
+        function updateBoundsAndClamp() {
+          bounds = getBounds();
+          pos.dx = Math.max(bounds.minTx, Math.min(bounds.maxTx, pos.dx));
+          pos.dy = Math.max(bounds.minTy, Math.min(bounds.maxTy, pos.dy));
+          applyTransform();
+        }
+
+        function applyTransform() {
+          contentEl.style.setProperty(dxKey, pos.dx + 'px');
+          contentEl.style.setProperty(dyKey, pos.dy + 'px');
+        }
+
+        function onPointerDown(e) {
+          if (e.button !== undefined && e.button !== 0) return;
+          e.preventDefault();
+          panEl.classList.add('dragging');
+          start.x = e.clientX;
+          start.y = e.clientY;
+          start.dx = pos.dx;
+          start.dy = pos.dy;
+          moved = 0;
+          setDragFlag(false);
+          if (e.pointerId !== undefined) {
+            try { panEl.setPointerCapture(e.pointerId); } catch (_) {}
+          }
+          document.addEventListener('pointermove', onPointerMove);
+          document.addEventListener('pointerup', onPointerUp);
+          document.addEventListener('pointercancel', onPointerUp);
+        }
+        function onPointerMove(e) {
+          var dx = e.clientX - start.x;
+          var dy = e.clientY - start.y;
+          moved = Math.sqrt(dx * dx + dy * dy);
+          pos.dx = Math.max(bounds.minTx, Math.min(bounds.maxTx, start.dx + dx));
+          pos.dy = Math.max(bounds.minTy, Math.min(bounds.maxTy, start.dy + dy));
+          applyTransform();
+        }
+        function onPointerUp(e) {
+          if (e && e.pointerId !== undefined) {
+            try { panEl.releasePointerCapture(e.pointerId); } catch (_) {}
+          }
+          panEl.classList.remove('dragging');
+          setDragFlag(moved > DRAG_THRESH);
+          document.removeEventListener('pointermove', onPointerMove);
+          document.removeEventListener('pointerup', onPointerUp);
+          document.removeEventListener('pointercancel', onPointerUp);
+        }
+
+        if (imgEl.complete && imgEl.naturalWidth) {
+          updateBoundsAndClamp();
+        } else {
+          imgEl.addEventListener('load', updateBoundsAndClamp);
+        }
+        window.addEventListener('resize', updateBoundsAndClamp);
+        panEl.addEventListener('pointerdown', onPointerDown);
+      }
+
+      makePannable(introPan, introPanContent, document.getElementById('introPanImg'), '--intro-dx', '--intro-dy', function (v) { didIntroDrag = v; });
+      makePannable(roomPan, roomPanContent, document.getElementById('roomPanImg'), '--room-dx', '--room-dy', function (v) { didRoomDrag = v; });
 
       doorHotspot.addEventListener('click', function () {
+        if (didIntroDrag) { didIntroDrag = false; return; }
         intro.classList.add('blurring', 'hidden');
         roomView.classList.remove('hidden');
+        setTimeout(function () { window.dispatchEvent(new Event('resize')); }, 80);
       });
 
       // 点击虚线框内：直接背景改为 bg2 虚化，隐藏房间，缓慢展开信件
       envelopeHotspot.addEventListener('click', function () {
+        if (didRoomDrag) { didRoomDrag = false; return; }
         document.body.classList.add('bg2-blur');
         roomView.classList.add('hidden');
         mainPage.classList.add('visible');
