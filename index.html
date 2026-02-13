@@ -318,7 +318,7 @@
       border-top-color: rgba(0, 0, 0, 0.5);
     }
 
-    /* 初始页小纸条热区：虚线框可见，位置由 :root 的 --note1-* / --note2-* / --note3-* / --note4-* 控制，随图拖拽 */
+    /* 初始页小纸条热区：虚线框已隐藏，位置由 :root 的 --note1-* / --note2-* / --note3-* / --note4-* 控制，随图拖拽 */
     .note1-hotspot,
     .note2-hotspot,
     .note3-hotspot,
@@ -326,8 +326,6 @@
       position: absolute;
       cursor: pointer;
       z-index: 1;
-      border: 2px dashed rgba(255, 255, 255, 0.75);
-      box-sizing: border-box;
     }
     .note1-hotspot {
       top: var(--note1-top, 15%);
@@ -386,6 +384,76 @@
     }
     .note-popup-card:focus {
       outline: none;
+    }
+
+    /* 门口密码弹窗：四个单格输入框，点击遮罩关闭 */
+    .door-pwd-popup {
+      position: fixed;
+      inset: 0;
+      z-index: 106;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+      background: rgba(0, 0, 0, 0.5);
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.3s ease, visibility 0.3s ease;
+    }
+    .door-pwd-popup.show {
+      opacity: 1;
+      visibility: visible;
+    }
+    .door-pwd-card {
+      background: var(--card);
+      color: var(--text);
+      border-radius: var(--radius);
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
+      padding: 1.5rem 1.75rem;
+      min-width: 260px;
+      cursor: default;
+    }
+    .door-pwd-card .door-pwd-title {
+      font-size: 1rem;
+      margin-bottom: 1rem;
+      text-align: center;
+    }
+    .door-pwd-inputs {
+      display: flex;
+      gap: 0.5rem;
+      justify-content: center;
+      margin-bottom: 0.75rem;
+    }
+    .door-pwd-inputs input {
+      width: 2.5rem;
+      height: 2.5rem;
+      text-align: center;
+      font-size: 1.25rem;
+      font-family: inherit;
+      border: 2px solid var(--accent-deep);
+      border-radius: 8px;
+      color: var(--text);
+      background: #fff;
+      box-sizing: border-box;
+    }
+    .door-pwd-inputs input:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px rgba(232, 180, 184, 0.3);
+    }
+    .door-pwd-inputs input.error {
+      border-color: #c44;
+      background: #fff5f5;
+    }
+    .door-pwd-err {
+      font-size: 0.85rem;
+      color: #c44;
+      text-align: center;
+      min-height: 1.25rem;
+      visibility: hidden;
+    }
+    .door-pwd-err.show {
+      visibility: visible;
     }
 
     /* ========== 房间视图：可拖动背景，信封热区随图移动 ========== */
@@ -957,6 +1025,19 @@
     <div class="note-popup" id="note4Popup" aria-hidden="true">
       <div class="note-popup-card" id="note4PopupCard" tabindex="-1">这棵树长得那么茂盛，有什么秘诀呢</div>
     </div>
+    <!-- 门口密码弹窗：四位数密码，正确后进入屋内 -->
+    <div class="door-pwd-popup" id="doorPwdPopup" aria-hidden="true">
+      <div class="door-pwd-card" id="doorPwdCard">
+        <p class="door-pwd-title">请输入密码</p>
+        <div class="door-pwd-inputs">
+          <input type="text" inputmode="numeric" maxlength="1" autocomplete="off" id="doorPwd0" aria-label="第1位">
+          <input type="text" inputmode="numeric" maxlength="1" autocomplete="off" id="doorPwd1" aria-label="第2位">
+          <input type="text" inputmode="numeric" maxlength="1" autocomplete="off" id="doorPwd2" aria-label="第3位">
+          <input type="text" inputmode="numeric" maxlength="1" autocomplete="off" id="doorPwd3" aria-label="第4位">
+        </div>
+        <p class="door-pwd-err" id="doorPwdErr">输入错误</p>
+      </div>
+    </div>
   </div>
 
   <!-- 房间视图：可拖动 bg2，信封热区随图；转到室外固定右下角 -->
@@ -1132,10 +1213,94 @@
       makePannable(introPan, document.getElementById('introPanHandle'), introPanContent, document.getElementById('introPanImg'), '--intro-dx', '--intro-dy');
       makePannable(roomPan, document.getElementById('roomPanHandle'), roomPanContent, document.getElementById('roomPanImg'), '--room-dx', '--room-dy');
 
-      doorHotspot.addEventListener('click', function () {
+      var DOOR_PASSWORD = '1972';
+
+      var doorPwdPopup = document.getElementById('doorPwdPopup');
+      var doorPwdCard = document.getElementById('doorPwdCard');
+      var doorPwdErr = document.getElementById('doorPwdErr');
+      var doorPwdInputs = [
+        document.getElementById('doorPwd0'),
+        document.getElementById('doorPwd1'),
+        document.getElementById('doorPwd2'),
+        document.getElementById('doorPwd3')
+      ];
+
+      function clearDoorPwd() {
+        doorPwdInputs.forEach(function (inp) {
+          inp.value = '';
+          inp.classList.remove('error');
+        });
+        doorPwdErr.classList.remove('show');
+      }
+
+      function closeDoorPwdPopup() {
+        doorPwdPopup.classList.remove('show');
+        doorPwdPopup.setAttribute('aria-hidden', 'true');
+        clearDoorPwd();
+      }
+
+      function enterRoom() {
+        closeDoorPwdPopup();
         intro.classList.add('blurring', 'hidden');
         roomView.classList.remove('hidden');
         setTimeout(function () { window.dispatchEvent(new Event('resize')); }, 80);
+      }
+
+      doorPwdPopup.addEventListener('click', function (e) {
+        if (e.target === doorPwdPopup) closeDoorPwdPopup();
+      });
+      doorPwdCard.addEventListener('click', function (e) { e.stopPropagation(); });
+
+      doorPwdInputs.forEach(function (inp, i) {
+        inp.addEventListener('keydown', function (e) {
+          if (e.key === 'Backspace' && !inp.value && i > 0) {
+            doorPwdInputs[i - 1].focus();
+            doorPwdInputs[i - 1].value = '';
+          }
+        });
+        inp.addEventListener('input', function () {
+          var v = inp.value.replace(/\D/g, '');
+          inp.value = v.slice(-1);
+          if (inp.value && i < 3) doorPwdInputs[i + 1].focus();
+          var all = doorPwdInputs.map(function (x) { return x.value; }).join('');
+          if (all.length === 4) {
+            if (all === DOOR_PASSWORD) {
+              enterRoom();
+            } else {
+              doorPwdErr.classList.add('show');
+              doorPwdInputs.forEach(function (x) { x.classList.add('error'); });
+              setTimeout(function () {
+                clearDoorPwd();
+                doorPwdInputs[0].focus();
+              }, 800);
+            }
+          }
+        });
+        inp.addEventListener('paste', function (e) {
+          e.preventDefault();
+          var pasted = (e.clipboardData || window.clipboardData).getData('text').replace(/\D/g, '').slice(0, 4);
+          for (var j = 0; j < pasted.length && (i + j) < 4; j++) {
+            doorPwdInputs[i + j].value = pasted[j];
+          }
+          var idx = Math.min(i + pasted.length, 3);
+          doorPwdInputs[idx].focus();
+          var all = doorPwdInputs.map(function (x) { return x.value; }).join('');
+          if (all.length === 4) {
+            if (all === DOOR_PASSWORD) enterRoom();
+            else {
+              doorPwdErr.classList.add('show');
+              doorPwdInputs.forEach(function (x) { x.classList.add('error'); });
+              setTimeout(function () { clearDoorPwd(); doorPwdInputs[0].focus(); }, 800);
+            }
+          }
+        });
+      });
+
+      doorHotspot.addEventListener('click', function () {
+        clearDoorPwd();
+        doorPwdPopup.classList.add('show');
+        doorPwdPopup.setAttribute('aria-hidden', 'false');
+        setTimeout(function () { doorPwdInputs[0].focus(); }, 100);
       });
 
       var note1Hotspot = document.getElementById('note1Hotspot');
