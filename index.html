@@ -1072,11 +1072,11 @@
 
       <!-- 分支选择 -->
       <div class="choice-section">
-        <span class="choice-label">今天心情怎么样？</span>
+        <span class="choice-label">你觉得店主人怎么样？</span>
         <div class="choice-btns">
           <button type="button" class="choice-btn" data-choice="good">很好呀</button>
           <button type="button" class="choice-btn" data-choice="ok">一般般</button>
-          <button type="button" class="choice-btn" data-choice="tired">有点累</button>
+          <button type="button" class="choice-btn" data-choice="tired">有点坏</button>
         </div>
         <div class="choice-reply">
           <span class="reply-text" id="replyText"></span>
@@ -1085,16 +1085,17 @@
 
       <!-- 信件正文：逐行淡入，可自定义内容 -->
       <div class="letter">
-        <p class="letter-line" data-delay="0"><span class="handwritten">亲爱的你，</span></p>
-        <p class="letter-line" data-delay="1">早上好、中午好、下午好、晚上好。</p>
-        <p class="letter-line" data-delay="2">希望你在平凡的日子里，也能常常发现小确幸。</p>
-        <p class="letter-line" data-delay="3">累了就休息，开心就大笑，永远有人站在你这边。</p>
-        <p class="letter-line" data-delay="4">祝你今天开心，明天开心，天天都开心～</p>
-        <p class="letter-line" data-delay="5"><span class="handwritten">—— 一直为你加油的人</span></p>
+        <p class="letter-line" data-delay="0"><span class="handwritten">可怜的小侦探，</span></p>
+        <p class="letter-line" data-delay="1">你已经落到了我的手里。</p>
+        <p class="letter-line" data-delay="2">这个咖啡馆有个诅咒，只要进过这个咖啡馆的人，都会变成可怜的矮脚小猫咪。</p>
+        <p class="letter-line" data-delay="3">然后就过上了吃饭要吭哧吭哧，喝水要吭哧吭哧，走路要吭哧吭哧的生活。</p>
+        <p class="letter-line" data-delay="4">想要破解这个诅咒吗？敬请期待探索小屋2吧～</p>
+        <p class="letter-line" data-delay="5">桀桀桀桀桀</p>
+        <p class="letter-line" data-delay="6"><span class="handwritten">—— 邪恶的店主人</span></p>
       </div>
 
       <div class="action-wrap">
-        <button type="button" class="btn-magic" id="btnMagic">点我有小心心</button>
+        <button type="button" class="btn-magic" id="btnMagic">点我助我破鼎</button>
       </div>
 
       <div class="back-wrap">
@@ -1494,9 +1495,9 @@
       var choiceBtns = document.querySelectorAll('.choice-btn');
       var replyText = document.getElementById('replyText');
       var replies = {
-        good: '那就继续保持～ 你笑起来最好看。',
-        ok: '抱抱你，明天会更好的。',
-        tired: '休息一下，你值得被温柔以待。'
+        good: '不错，很识相。',
+        ok: '就这？还有更坏的吗？',
+        tired: '可恶，建议重选。'
       };
 
       choiceBtns.forEach(function (btn) {
