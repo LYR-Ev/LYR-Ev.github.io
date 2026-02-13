@@ -36,7 +36,7 @@
     }
 
     /*
-      虚线框位置与大小：只改下面 :root 里的 --door-* / --env-* 即可生效。
+      虚线框位置与大小：只改下面 :root 里的 --door-* / --env-* / --note1-* / --note2-* / --note3-* / --note4-* 即可生效。
       保存后若未变化请强制刷新（Ctrl+F5 或 Cmd+Shift+R）。百分比相对于背景图容器。
     */
     :root {
@@ -57,6 +57,26 @@
       --door-left: 37%;
       --door-width: 12%;
       --door-height: 43%;
+      /* 牌匾上小纸条 虚线框（初始页，随图拖拽） */
+      --note1-top: 46%;
+      --note1-left: 28%;
+      --note1-width: 4%;
+      --note1-height: 17%;
+      /* 花丛里小纸条 虚线框（初始页，随图拖拽） */
+      --note2-top: 68%;
+      --note2-left: 49%;
+      --note2-width: 48%;
+      --note2-height: 16%;
+      /* 窗户上小纸条 虚线框（初始页，随图拖拽） */
+      --note3-top: 36%;
+      --note3-left: 51%;
+      --note3-width: 35%;
+      --note3-height: 29%;
+      /* 树小纸条 虚线框（初始页，随图拖拽） */
+      --note4-top: 7%;
+      --note4-left: 66%;
+      --note4-width: 32%;
+      --note4-height: 22%;
     }
 
     html {
@@ -296,6 +316,76 @@
       right: 12px;
       border: 6px solid transparent;
       border-top-color: rgba(0, 0, 0, 0.5);
+    }
+
+    /* 初始页小纸条热区：虚线框可见，位置由 :root 的 --note1-* / --note2-* / --note3-* / --note4-* 控制，随图拖拽 */
+    .note1-hotspot,
+    .note2-hotspot,
+    .note3-hotspot,
+    .note4-hotspot {
+      position: absolute;
+      cursor: pointer;
+      z-index: 1;
+      border: 2px dashed rgba(255, 255, 255, 0.75);
+      box-sizing: border-box;
+    }
+    .note1-hotspot {
+      top: var(--note1-top, 15%);
+      left: var(--note1-left, 20%);
+      width: var(--note1-width, 22%);
+      height: var(--note1-height, 18%);
+    }
+    .note2-hotspot {
+      top: var(--note2-top, 60%);
+      left: var(--note2-left, 65%);
+      width: var(--note2-width, 22%);
+      height: var(--note2-height, 18%);
+    }
+    .note3-hotspot {
+      top: var(--note3-top, 25%);
+      left: var(--note3-left, 55%);
+      width: var(--note3-width, 24%);
+      height: var(--note3-height, 20%);
+    }
+    .note4-hotspot {
+      top: var(--note4-top, 45%);
+      left: var(--note4-left, 15%);
+      width: var(--note4-width, 22%);
+      height: var(--note4-height, 22%);
+    }
+
+    /* 小纸条弹窗：居中卡片，点击遮罩关闭 */
+    .note-popup {
+      position: fixed;
+      inset: 0;
+      z-index: 105;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+      background: rgba(0, 0, 0, 0.45);
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.3s ease, visibility 0.3s ease;
+    }
+    .note-popup.show {
+      opacity: 1;
+      visibility: visible;
+    }
+    .note-popup-card {
+      max-width: 320px;
+      width: 100%;
+      padding: 1.25rem 1.5rem;
+      background: var(--card);
+      color: var(--text);
+      border-radius: var(--radius);
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25);
+      font-size: 0.95rem;
+      line-height: 1.6;
+      cursor: default;
+    }
+    .note-popup-card:focus {
+      outline: none;
     }
 
     /* ========== 房间视图：可拖动背景，信封热区随图移动 ========== */
@@ -848,7 +938,24 @@
         <div class="door-hotspot" id="doorHotspot">
           <span class="door-bubble">点击门口探索小屋</span>
         </div>
+        <div class="note1-hotspot" id="note1Hotspot" aria-label="小纸条"></div>
+        <div class="note2-hotspot" id="note2Hotspot" aria-label="小纸条"></div>
+        <div class="note3-hotspot" id="note3Hotspot" aria-label="小纸条"></div>
+        <div class="note4-hotspot" id="note4Hotspot" aria-label="小纸条"></div>
       </div>
+    </div>
+    <!-- 小纸条弹窗：点击遮罩关闭 -->
+    <div class="note-popup" id="note1Popup" aria-hidden="true">
+      <div class="note-popup-card" id="note1PopupCard" tabindex="-1">这家店似乎是1972年开业的</div>
+    </div>
+    <div class="note-popup" id="note2Popup" aria-hidden="true">
+      <div class="note-popup-card" id="note2PopupCard" tabindex="-1">花丛里有一张揉成团的纸条，似乎是店主人写给某个人的一封信，为什么会被丢弃呢？</div>
+    </div>
+    <div class="note-popup" id="note3Popup" aria-hidden="true">
+      <div class="note-popup-card" id="note3PopupCard" tabindex="-1">小屋里有温暖的烛光，可以看出店主人一个很温暖的人呢</div>
+    </div>
+    <div class="note-popup" id="note4Popup" aria-hidden="true">
+      <div class="note-popup-card" id="note4PopupCard" tabindex="-1">这棵树长得那么茂盛，有什么秘诀呢</div>
     </div>
   </div>
 
@@ -1030,6 +1137,65 @@
         roomView.classList.remove('hidden');
         setTimeout(function () { window.dispatchEvent(new Event('resize')); }, 80);
       });
+
+      var note1Hotspot = document.getElementById('note1Hotspot');
+      var note2Hotspot = document.getElementById('note2Hotspot');
+      var note1Popup = document.getElementById('note1Popup');
+      var note2Popup = document.getElementById('note2Popup');
+      var note1PopupCard = document.getElementById('note1PopupCard');
+      var note2PopupCard = document.getElementById('note2PopupCard');
+      var note3Hotspot = document.getElementById('note3Hotspot');
+      var note3Popup = document.getElementById('note3Popup');
+      var note3PopupCard = document.getElementById('note3PopupCard');
+      var note4Hotspot = document.getElementById('note4Hotspot');
+      var note4Popup = document.getElementById('note4Popup');
+      var note4PopupCard = document.getElementById('note4PopupCard');
+
+      note1Hotspot.addEventListener('click', function () {
+        note1Popup.classList.add('show');
+        note1Popup.setAttribute('aria-hidden', 'false');
+      });
+      note2Hotspot.addEventListener('click', function () {
+        note2Popup.classList.add('show');
+        note2Popup.setAttribute('aria-hidden', 'false');
+      });
+      note3Hotspot.addEventListener('click', function () {
+        note3Popup.classList.add('show');
+        note3Popup.setAttribute('aria-hidden', 'false');
+      });
+      note4Hotspot.addEventListener('click', function () {
+        note4Popup.classList.add('show');
+        note4Popup.setAttribute('aria-hidden', 'false');
+      });
+
+      note1Popup.addEventListener('click', function (e) {
+        if (e.target === note1Popup) {
+          note1Popup.classList.remove('show');
+          note1Popup.setAttribute('aria-hidden', 'true');
+        }
+      });
+      note2Popup.addEventListener('click', function (e) {
+        if (e.target === note2Popup) {
+          note2Popup.classList.remove('show');
+          note2Popup.setAttribute('aria-hidden', 'true');
+        }
+      });
+      note3Popup.addEventListener('click', function (e) {
+        if (e.target === note3Popup) {
+          note3Popup.classList.remove('show');
+          note3Popup.setAttribute('aria-hidden', 'true');
+        }
+      });
+      note4Popup.addEventListener('click', function (e) {
+        if (e.target === note4Popup) {
+          note4Popup.classList.remove('show');
+          note4Popup.setAttribute('aria-hidden', 'true');
+        }
+      });
+      note1PopupCard.addEventListener('click', function (e) { e.stopPropagation(); });
+      note2PopupCard.addEventListener('click', function (e) { e.stopPropagation(); });
+      note3PopupCard.addEventListener('click', function (e) { e.stopPropagation(); });
+      note4PopupCard.addEventListener('click', function (e) { e.stopPropagation(); });
 
       envelopeHotspot.addEventListener('click', function () {
         document.body.classList.add('bg2-blur');
