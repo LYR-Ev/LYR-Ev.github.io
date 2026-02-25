@@ -36,7 +36,7 @@
     }
 
     /*
-      虚线框位置与大小：只改下面 :root 里的 --door-* / --env-* / --note1-* / --note2-* / --note3-* / --note4-* 即可生效。
+      虚线框位置与大小：只改下面 :root 里的 --door-* / --env-* / --photo2-* / --note1-* / --note2-* / --note3-* / --note4-* 即可生效。
       保存后若未变化请强制刷新（Ctrl+F5 或 Cmd+Shift+R）。百分比相对于背景图容器。
     */
     :root {
@@ -52,6 +52,11 @@
       --env-left: 33%;
       --env-width: 15%;
       --env-height: 9%;
+      /* bg2 页面 2.jpg 照片虚线框（房间页，随图拖拽） */
+      --photo2-top: 56%;
+      --photo2-left: 69%;
+      --photo2-width: 4%;
+      --photo2-height: 7%;
       /* 门口虚线框：top/left 位置，width/height 大小（% 或 px） */
       --door-top: 38%;
       --door-left: 37%;
@@ -547,6 +552,73 @@
       right: 12px;
       border: 6px solid transparent;
       border-top-color: rgba(255, 255, 255, 0.96);
+    }
+
+    /* bg2 页面照片热区：虚线框已隐藏，位置由 :root 的 --photo2-* 控制，随图拖拽 */
+    .photo2-hotspot {
+      position: absolute;
+      top: var(--photo2-top, 25%);
+      left: var(--photo2-left, 20%);
+      width: var(--photo2-width, 24%);
+      height: var(--photo2-height, 28%);
+      cursor: pointer;
+      z-index: 1;
+    }
+
+    /* 房间内照片弹窗：显示图片+文字，点击遮罩关闭，背景透明 */
+    .room-photo-popup {
+      position: fixed;
+      inset: 0;
+      z-index: 55;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+      background: transparent;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.3s ease, visibility 0.3s ease;
+    }
+    .room-photo-popup.show {
+      opacity: 1;
+      visibility: visible;
+    }
+    .room-photo-card {
+      display: flex;
+      align-items: center;
+      gap: 1.25rem;
+      max-width: 90%;
+      background: transparent;
+      color: var(--text);
+      border-radius: var(--radius);
+      padding: 1.25rem;
+      cursor: default;
+    }
+    /* 相框：外框 + 内衬白边，像相框里的照片 */
+    .room-photo-frame {
+      padding: 14px;
+      background: linear-gradient(160deg, #c9b896 0%, #a08060 50%, #8b6914 100%);
+      border-radius: 6px;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35), inset 0 -1px 0 rgba(0, 0, 0, 0.15), 0 10px 28px rgba(0, 0, 0, 0.4);
+      display: inline-block;
+    }
+    .room-photo-frame img {
+      display: block;
+      max-width: 200px;
+      max-height: 260px;
+      width: auto;
+      height: auto;
+      border: 8px solid #f8f4ec;
+      border-radius: 2px;
+      object-fit: contain;
+      box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.08);
+    }
+    .room-photo-card .room-photo-caption {
+      font-size: 0.95rem;
+      line-height: 1.6;
+      max-width: 240px;
+      color: #f5f0e8;
+      text-shadow: 0 1px 4px rgba(0, 0, 0, 1.2), 0 2px 8px rgba(0, 0, 0, 1), 0 0 12px rgba(0, 0, 0, 0.8);
     }
 
     /* 「转到室外」：固定在视口右下角，不随背景拖动 */
@@ -1049,6 +1121,16 @@
         <div class="envelope-hotspot" id="envelopeHotspot">
           <span class="envelope-bubble">点击信封展开信件</span>
         </div>
+        <div class="photo2-hotspot" id="photo2Hotspot" aria-label="照片"></div>
+      </div>
+    </div>
+    <!-- 房间内照片弹窗：点击遮罩关闭 -->
+    <div class="room-photo-popup" id="photo2Popup" aria-hidden="true">
+      <div class="room-photo-card" id="photo2PopupCard">
+        <div class="room-photo-frame">
+          <img src="2.jpg" alt="照片">
+        </div>
+        <p class="room-photo-caption">这似乎是八条小时候上学的照片，可爱捏</p>
       </div>
     </div>
     <button type="button" class="btn-outdoor" id="btnOutdoor">转到室外</button>
@@ -1362,6 +1444,21 @@
       note2PopupCard.addEventListener('click', function (e) { e.stopPropagation(); });
       note3PopupCard.addEventListener('click', function (e) { e.stopPropagation(); });
       note4PopupCard.addEventListener('click', function (e) { e.stopPropagation(); });
+
+      var photo2Hotspot = document.getElementById('photo2Hotspot');
+      var photo2Popup = document.getElementById('photo2Popup');
+      var photo2PopupCard = document.getElementById('photo2PopupCard');
+      photo2Hotspot.addEventListener('click', function () {
+        photo2Popup.classList.add('show');
+        photo2Popup.setAttribute('aria-hidden', 'false');
+      });
+      photo2Popup.addEventListener('click', function (e) {
+        if (e.target === photo2Popup) {
+          photo2Popup.classList.remove('show');
+          photo2Popup.setAttribute('aria-hidden', 'true');
+        }
+      });
+      photo2PopupCard.addEventListener('click', function (e) { e.stopPropagation(); });
 
       envelopeHotspot.addEventListener('click', function () {
         document.body.classList.add('bg2-blur');
