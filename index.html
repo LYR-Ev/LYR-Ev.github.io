@@ -621,6 +621,370 @@
       text-shadow: 0 1px 4px rgba(0, 0, 0, 1.2), 0 2px 8px rgba(0, 0, 0, 1), 0 0 12px rgba(0, 0, 0, 0.8);
     }
 
+    /* ========== 天气模块样式（bg2 页面，纯 CSS，无框架） ========== */
+    /* 触发按钮：仅图标，悬停展开「天气」；可拖拽；z-index 高于虚线区(100)以便遮挡时优先响应点击，低于音乐(110) */
+    .weather-fixed {
+      position: fixed;
+      left: 1rem;
+      top: 50%;
+      transform: translateY(-50%);
+      z-index: 108;
+    }
+    .weather-trigger {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 48px;
+      height: 48px;
+      padding: 0;
+      border: 2px solid rgba(0, 0, 0, 0.08);
+      border-radius: 50%;
+      background: #fff;
+      color: #5a5550;
+      cursor: pointer;
+      transition: width 0.3s ease, padding 0.3s ease, border-radius 0.3s ease, background 0.25s ease, border-color 0.25s ease;
+      overflow: hidden;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+      gap: 8px;
+      font-family: 'ZCOOL KuaiLe', cursive;
+    }
+    .weather-trigger:hover {
+      width: auto;
+      padding-left: 14px;
+      padding-right: 14px;
+      border-radius: 999px;
+      border-color: rgba(0, 0, 0, 0.12);
+    }
+    .weather-trigger-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      font-size: 1.35rem;
+    }
+    .weather-trigger-text {
+      font-size: 0.8rem;
+      white-space: nowrap;
+      max-width: 0;
+      opacity: 0;
+      overflow: hidden;
+      transition: max-width 0.3s ease, opacity 0.25s ease;
+    }
+    .weather-trigger:hover .weather-trigger-text {
+      max-width: 10em;
+      opacity: 1;
+    }
+
+    /* 弹窗遮罩：半透明，点击关闭 */
+    .weather-popup {
+      position: fixed;
+      inset: 0;
+      z-index: 62;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+      pointer-events: none;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.25s ease, visibility 0.25s ease;
+    }
+    .weather-popup.show {
+      pointer-events: auto;
+      opacity: 1;
+      visibility: visible;
+    }
+    .weather-popup-backdrop {
+      position: absolute;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.4);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      cursor: pointer;
+    }
+    /* 弹窗卡片：居中、圆角、阴影，淡入+缩放动画 */
+    .weather-popup-card {
+      position: relative;
+      width: 100%;
+      max-width: 360px;
+      background: linear-gradient(165deg, #f8fafc 0%, #e2e8f0 100%);
+      border-radius: 20px;
+      box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(255, 255, 255, 0.5) inset;
+      overflow: hidden;
+      transform: scale(0.9);
+      opacity: 0;
+      transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.25s ease, background 0.5s ease, box-shadow 0.5s ease;
+    }
+    .weather-popup.show .weather-popup-card {
+      transform: scale(1);
+      opacity: 1;
+    }
+    /* 根据天气/时段切换弹窗氛围（可选） */
+    .weather-popup-card.weather-theme-sunny .weather-popup-header {
+      background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    }
+    .weather-popup-card.weather-theme-rain .weather-popup-header {
+      background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+    }
+    .weather-popup-card.weather-theme-snow .weather-popup-header {
+      background: linear-gradient(135deg, #94a3b8 0%, #64748b 100%);
+    }
+    .weather-popup-card.weather-theme-night .weather-popup-header {
+      background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+    }
+    .weather-popup-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1rem 1.25rem;
+      background: linear-gradient(135deg, #6478b4 0%, #4c6a9e 100%);
+      color: #fff;
+      transition: background 0.5s ease, box-shadow 0.5s ease;
+    }
+    .weather-popup-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin: 0;
+      letter-spacing: 0.02em;
+    }
+    .weather-popup-close {
+      width: 32px;
+      height: 32px;
+      padding: 0;
+      font-size: 1.5rem;
+      line-height: 1;
+      color: rgba(255, 255, 255, 0.9);
+      background: rgba(255, 255, 255, 0.15);
+      border: none;
+      border-radius: 50%;
+      cursor: pointer;
+      transition: background 0.2s ease, transform 0.2s ease;
+    }
+    .weather-popup-close:hover {
+      background: rgba(255, 255, 255, 0.25);
+      transform: scale(1.08);
+    }
+    .weather-popup-body {
+      padding: 1.25rem 1.5rem;
+    }
+    .weather-label {
+      display: block;
+      font-size: 0.85rem;
+      color: var(--text-soft);
+      margin-bottom: 0.5rem;
+    }
+    .weather-select {
+      width: 100%;
+      padding: 0.6rem 1rem;
+      font-size: 0.95rem;
+      font-family: inherit;
+      color: var(--text);
+      background: #fff;
+      border: 1px solid #cbd5e1;
+      border-radius: 12px;
+      cursor: pointer;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%234a4541' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 1rem center;
+      padding-right: 2.25rem;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+    }
+    .weather-select:focus {
+      outline: none;
+      border-color: #6478b4;
+      box-shadow: 0 0 0 3px rgba(100, 120, 180, 0.2);
+    }
+    .weather-city-row,
+    .weather-search-row {
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+    }
+    .weather-search-row .weather-select {
+      flex: 1;
+    }
+    .weather-search-row input.weather-select {
+      background-image: none;
+      padding-right: 1rem;
+    }
+    .weather-query-btn {
+      flex-shrink: 0;
+      padding: 0.5rem 1rem;
+      font-size: 0.9rem;
+      font-family: inherit;
+      color: #fff;
+      background: #2563eb;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .weather-query-btn:hover {
+      background: #1d4ed8;
+    }
+    .weather-geo-btn {
+      flex-shrink: 0;
+      padding: 0.5rem 0.75rem;
+      font-size: 0.85rem;
+      font-family: inherit;
+      color: #6478b4;
+      background: rgba(100, 120, 180, 0.15);
+      border: 1px solid rgba(100, 120, 180, 0.4);
+      border-radius: 10px;
+      cursor: pointer;
+      transition: background 0.2s, border-color 0.2s;
+    }
+    .weather-geo-btn:hover {
+      background: rgba(100, 120, 180, 0.25);
+      border-color: #6478b4;
+    }
+    .weather-result {
+      margin-top: 1rem;
+      min-height: 4rem;
+    }
+    .weather-loading {
+      margin: 0;
+      font-size: 0.9rem;
+      color: var(--text-soft);
+    }
+    .weather-data {
+      margin: 0;
+    }
+    .weather-icon-row {
+      font-size: 2.5rem;
+      line-height: 1;
+      margin-bottom: 0.5rem;
+      text-align: center;
+    }
+    .weather-temp {
+      font-size: 1.75rem;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 0.25rem;
+    }
+    .weather-desc,
+    .weather-wind {
+      font-size: 0.9rem;
+      color: var(--text-soft);
+      margin: 0.25rem 0;
+    }
+    .weather-forecast-title {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-soft);
+      margin: 0.75rem 0 0.5rem;
+      padding-top: 0.75rem;
+      border-top: 1px solid #e2e8f0;
+    }
+    .weather-forecast {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-bottom: 0.75rem;
+    }
+    .weather-day {
+      flex: 1;
+      min-width: 5rem;
+      padding: 0.6rem;
+      background: rgba(255, 255, 255, 0.85);
+      border-radius: 12px;
+      text-align: center;
+      font-size: 0.8rem;
+      color: var(--text);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    }
+    .weather-day .day-date { font-size: 0.75rem; color: var(--text-soft); margin-bottom: 0.35rem; }
+    .weather-day .day-icon { font-size: 1.5rem; margin: 0.25rem 0; }
+    .weather-day .day-desc { font-size: 0.75rem; color: var(--text-soft); margin-bottom: 0.25rem; }
+    .weather-day .day-temp { font-weight: 600; color: var(--text); margin: 0.2rem 0; }
+    .weather-day .day-humidity,
+    .weather-day .day-wind { font-size: 0.7rem; color: var(--text-soft); margin: 0.1rem 0; }
+    .weather-chart-section {
+      margin-top: 0.75rem;
+      padding-top: 0.75rem;
+      border-top: 1px solid #e2e8f0;
+    }
+    .weather-chart-title {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--text);
+      margin: 0 0 0.5rem;
+    }
+    .weather-chart-legend {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 0.5rem;
+      font-size: 0.8rem;
+      color: var(--text-soft);
+    }
+    .chart-legend-item { display: flex; align-items: center; gap: 0.35rem; }
+    .chart-legend-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+    }
+    .chart-legend-max .chart-legend-dot { background: #e11d48; }
+    .chart-legend-min .chart-legend-dot { background: #3b82f6; }
+    .weather-chart-wrap {
+      position: relative;
+      margin-top: 0.25rem;
+      border-radius: 10px;
+      overflow: visible;
+      background: rgba(255, 255, 255, 0.5);
+    }
+    #tempChart {
+      display: block;
+      width: 100%;
+      max-width: 320px;
+      height: 120px;
+    }
+    .weather-chart-tooltip {
+      position: absolute;
+      pointer-events: none;
+      display: none;
+      min-width: 100px;
+      padding: 0.4rem 0.6rem;
+      background: rgba(30, 30, 30, 0.92);
+      color: #fff;
+      font-size: 0.8rem;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+      z-index: 10;
+      white-space: pre-line;
+    }
+    .weather-chart-tooltip.show {
+      display: block;
+    }
+    .weather-error {
+      margin: 0;
+      font-size: 0.9rem;
+      color: #b91c1c;
+    }
+    .weather-updated {
+      margin: 0.25rem 0 0;
+      font-size: 0.75rem;
+      color: var(--text);
+      opacity: 0.85;
+    }
+      @media (max-width: 480px) {
+      .weather-trigger {
+        width: 44px;
+        height: 44px;
+        font-size: 1.2rem;
+      }
+      .weather-fixed {
+        left: 0.75rem;
+      }
+      .weather-popup-card {
+        max-width: 100%;
+        border-radius: 16px;
+      }
+      .weather-popup-body {
+        padding: 1rem 1.25rem;
+      }
+    }
+
     /* 「转到室外」：固定在视口右下角，不随背景拖动 */
     .btn-outdoor {
       position: fixed;
@@ -1134,6 +1498,58 @@
       </div>
     </div>
     <button type="button" class="btn-outdoor" id="btnOutdoor">转到室外</button>
+
+    <!-- 天气模块：触发按钮 + 弹窗（纯 HTML/CSS/JS，无框架） -->
+    <div class="weather-fixed" id="weatherFixed">
+      <button type="button" class="weather-trigger" id="weatherTrigger" title="查看天气" aria-label="查看天气">
+        <span class="weather-trigger-icon" id="weatherTriggerIcon" aria-hidden="true">☀️</span>
+        <span class="weather-trigger-text">天气</span>
+      </button>
+    </div>
+    <div class="weather-popup" id="weatherPopup" aria-hidden="true" aria-modal="true" role="dialog" aria-labelledby="weatherPopupTitle">
+      <div class="weather-popup-backdrop" id="weatherPopupBackdrop"></div>
+      <div class="weather-popup-card" id="weatherPopupCard">
+        <div class="weather-popup-header">
+          <h2 class="weather-popup-title" id="weatherPopupTitle">5日天气预报查询</h2>
+          <button type="button" class="weather-popup-close" id="weatherPopupClose" aria-label="关闭">&times;</button>
+        </div>
+        <div class="weather-popup-body">
+          <div class="weather-search-row">
+            <input type="text" class="weather-select" id="weatherCityInput" list="weatherCitiesList" placeholder="输入城市名" autocomplete="off" aria-describedby="weatherResult">
+            <datalist id="weatherCitiesList">
+              <option value="北京"><option value="上海"><option value="广州"><option value="深圳"><option value="杭州"><option value="成都"><option value="武汉"><option value="西安"><option value="南京"><option value="苏州">
+            </datalist>
+            <button type="button" class="weather-query-btn" id="weatherQueryBtn">查询</button>
+            <button type="button" class="weather-geo-btn" id="weatherGeoBtn" title="定位">📍 定位</button>
+          </div>
+          <div class="weather-result" id="weatherResult" role="status" aria-live="polite">
+            <p class="weather-loading" id="weatherLoading">正在获取天气...</p>
+            <div class="weather-data" id="weatherData" hidden>
+              <div class="weather-current-row" id="weatherCurrentRow" hidden>
+                <p class="weather-icon-row weather-icon" id="weatherIcon" aria-hidden="true"></p>
+                <p class="weather-temp" id="weatherTemp"></p>
+                <p class="weather-desc" id="weatherDesc"></p>
+                <p class="weather-wind" id="weatherWind"></p>
+              </div>
+              <div class="weather-forecast" id="weatherForecast"></div>
+              <div class="weather-chart-section">
+                <h3 class="weather-chart-title" id="weatherChartTitle">未来五天天气预报</h3>
+                <div class="weather-chart-legend">
+                  <span class="chart-legend-item chart-legend-max"><span class="chart-legend-dot"></span>最高气温</span>
+                  <span class="chart-legend-item chart-legend-min"><span class="chart-legend-dot"></span>最低气温</span>
+                </div>
+                <div class="weather-chart-wrap">
+                  <canvas id="tempChart" width="320" height="120" aria-label="温度趋势"></canvas>
+                  <div class="weather-chart-tooltip" id="weatherChartTooltip"></div>
+                </div>
+              </div>
+              <p class="weather-updated" id="weatherLastUpdated" aria-live="polite"></p>
+            </div>
+            <p class="weather-error" id="weatherError" hidden></p>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <div class="hearts-layer" id="heartsLayer"></div>
@@ -1216,10 +1632,16 @@
       /**
        * 按 cover 规则计算内容尺寸，使整图可被拖拽浏览；拖拽范围限制在内容与视口内，不露空白。
        * handleEl = 仅在此层按下时开始拖拽（门口/信封在上一层，点它们不会触发拖拽）；panEl 用于 capture 和 dragging 样式
+       * options = { extraStartEls: [el, ...], onTapWhenStartOn: function(targetEl) {} } 可选；extraStartEls 上按下也可开始拖拽背景，若未移动则视为点击并调用 onTapWhenStartOn(targetEl)
        */
-      function makePannable(panEl, handleEl, contentEl, imgEl, dxKey, dyKey) {
+      function makePannable(panEl, handleEl, contentEl, imgEl, dxKey, dyKey, options) {
+        var opts = options || {};
+        var extraStartEls = opts.extraStartEls || [];
+        var onTapWhenStartOn = opts.onTapWhenStartOn || function () {};
+        var DRAG_THRESHOLD = 5;
         var pos = { dx: 0, dy: 0 };
-        var start = { x: 0, y: 0, dx: 0, dy: 0 };
+        var start = { x: 0, y: 0, dx: 0, dy: 0, target: null };
+        var hasMoved = false;
         var bounds = { minTx: 0, maxTx: 0, minTy: 0, maxTy: 0 };
 
         function getBounds() {
@@ -1260,6 +1682,8 @@
           start.y = e.clientY;
           start.dx = pos.dx;
           start.dy = pos.dy;
+          start.target = e.target;
+          hasMoved = false;
           if (e.pointerId !== undefined) {
             try { panEl.setPointerCapture(e.pointerId); } catch (_) {}
           }
@@ -1270,6 +1694,7 @@
         function onPointerMove(e) {
           var dx = e.clientX - start.x;
           var dy = e.clientY - start.y;
+          if (!hasMoved && (Math.abs(dx) > DRAG_THRESHOLD || Math.abs(dy) > DRAG_THRESHOLD)) hasMoved = true;
           pos.dx = Math.max(bounds.minTx, Math.min(bounds.maxTx, start.dx + dx));
           pos.dy = Math.max(bounds.minTy, Math.min(bounds.maxTy, start.dy + dy));
           applyTransform();
@@ -1282,6 +1707,9 @@
           document.removeEventListener('pointermove', onPointerMove);
           document.removeEventListener('pointerup', onPointerUp);
           document.removeEventListener('pointercancel', onPointerUp);
+          if (!hasMoved && start.target && extraStartEls.indexOf(start.target) !== -1) {
+            onTapWhenStartOn(start.target);
+          }
         }
 
         if (imgEl.complete && imgEl.naturalWidth) {
@@ -1291,9 +1719,22 @@
         }
         window.addEventListener('resize', updateBoundsAndClamp);
         handleEl.addEventListener('pointerdown', onPointerDown);
+        extraStartEls.forEach(function (el) {
+          if (el) el.addEventListener('pointerdown', onPointerDown);
+        });
       }
 
-      makePannable(introPan, document.getElementById('introPanHandle'), introPanContent, document.getElementById('introPanImg'), '--intro-dx', '--intro-dy');
+      makePannable(introPan, document.getElementById('introPanHandle'), introPanContent, document.getElementById('introPanImg'), '--intro-dx', '--intro-dy', {
+        extraStartEls: ['note1Hotspot', 'note2Hotspot', 'note3Hotspot', 'note4Hotspot'].map(function (id) { return document.getElementById(id); }).filter(Boolean),
+        onTapWhenStartOn: function (targetEl) {
+          var id = targetEl.id;
+          var popup = id === 'note1Hotspot' ? document.getElementById('note1Popup') : id === 'note2Hotspot' ? document.getElementById('note2Popup') : id === 'note3Hotspot' ? document.getElementById('note3Popup') : id === 'note4Hotspot' ? document.getElementById('note4Popup') : null;
+          if (popup) {
+            popup.classList.add('show');
+            popup.setAttribute('aria-hidden', 'false');
+          }
+        }
+      });
       makePannable(roomPan, document.getElementById('roomPanHandle'), roomPanContent, document.getElementById('roomPanImg'), '--room-dx', '--room-dy');
 
       var DOOR_PASSWORD = '1972';
@@ -1399,23 +1840,7 @@
       var note4Popup = document.getElementById('note4Popup');
       var note4PopupCard = document.getElementById('note4PopupCard');
 
-      note1Hotspot.addEventListener('click', function () {
-        note1Popup.classList.add('show');
-        note1Popup.setAttribute('aria-hidden', 'false');
-      });
-      note2Hotspot.addEventListener('click', function () {
-        note2Popup.classList.add('show');
-        note2Popup.setAttribute('aria-hidden', 'false');
-      });
-      note3Hotspot.addEventListener('click', function () {
-        note3Popup.classList.add('show');
-        note3Popup.setAttribute('aria-hidden', 'false');
-      });
-      note4Hotspot.addEventListener('click', function () {
-        note4Popup.classList.add('show');
-        note4Popup.setAttribute('aria-hidden', 'false');
-      });
-
+      /* 小纸条弹窗由 makePannable 的 onTapWhenStartOn 在“点击未挪动”时打开，此处只保留关闭逻辑 */
       note1Popup.addEventListener('click', function (e) {
         if (e.target === note1Popup) {
           note1Popup.classList.remove('show');
@@ -1491,6 +1916,635 @@
         intro.classList.remove('blurring', 'hidden');
         roomView.classList.add('hidden');
       });
+
+      /*
+       * 天气模块：Class 封装 + 缓存 TTL + 防抖 + 定位缓存 + 请求超时 + 完整天气码
+       */
+      (function () {
+        var TTL_WEATHER = 10 * 60 * 1000;
+        var TTL_LOCATION = 30 * 60 * 1000;
+        var FETCH_TIMEOUT = 8000;
+        var DEBOUNCE_DELAY = 400;
+        var STORAGE_KEY_LOCATION = 'weather_last_location';
+        var STORAGE_KEY_TRIGGER_POS = 'weather_trigger_pos';
+        var STORAGE_KEY_LAST_WEATHERCODE = 'weather_last_weathercode';
+
+        /* 天气按钮图标映射（随最后浏览城市当前天气变化） */
+        var triggerWeatherMap = {
+          0: { icon: '☀️', desc: '晴' }, 1: { icon: '🌤️', desc: '少云' }, 2: { icon: '⛅', desc: '多云' }, 3: { icon: '☁️', desc: '阴' },
+          45: { icon: '🌫️', desc: '雾' }, 48: { icon: '🌫️', desc: '浓雾' },
+          51: { icon: '🌦️', desc: '毛毛雨' }, 53: { icon: '🌦️', desc: '小雨' }, 55: { icon: '🌧️', desc: '中雨' },
+          61: { icon: '🌧️', desc: '小雨' }, 63: { icon: '🌧️', desc: '中雨' }, 65: { icon: '🌧️', desc: '大雨' },
+          71: { icon: '❄️', desc: '小雪' }, 73: { icon: '❄️', desc: '中雪' }, 75: { icon: '❄️', desc: '大雪' },
+          80: { icon: '🌦️', desc: '阵雨' }, 81: { icon: '🌧️', desc: '强阵雨' }, 82: { icon: '⛈️', desc: '暴雨' },
+          95: { icon: '⛈️', desc: '雷暴' }, 96: { icon: '⛈️', desc: '雷暴冰雹' }, 99: { icon: '⛈️', desc: '强雷暴' }
+        };
+        function getTriggerIcon(code) {
+          code = code != null ? Number(code) : 0;
+          if (isNaN(code)) code = 0;
+          return triggerWeatherMap[code] ? triggerWeatherMap[code].icon : '☀️';
+        }
+
+        function debounce(fn, delay) {
+          var t;
+          return function () {
+            var args = arguments;
+            clearTimeout(t);
+            t = setTimeout(function () { fn.apply(null, args); }, delay);
+          };
+        }
+
+        function fetchWithTimeout(url, ms, fetchOpts) {
+          var timeoutId;
+          var timeoutPromise = new Promise(function (_, rej) {
+            timeoutId = setTimeout(function () { rej(new Error('请求超时')); }, ms);
+          });
+          var fetchPromise = fetch(url, Object.assign({ method: 'GET' }, fetchOpts || {})).then(function (res) {
+            clearTimeout(timeoutId);
+            return res;
+          }, function (err) {
+            clearTimeout(timeoutId);
+            throw err;
+          });
+          return Promise.race([fetchPromise, timeoutPromise]);
+        }
+
+        var DEFAULT_WEATHER = { icon: '🌈', desc: '未知天气' };
+        var weatherMap = {
+          0: { icon: '☀️', desc: '晴' }, 1: { icon: '🌤️', desc: '基本晴' }, 2: { icon: '⛅', desc: '少云' }, 3: { icon: '☁️', desc: '多云' }, 4: { icon: '☁️', desc: '阴' },
+          45: { icon: '🌫️', desc: '雾' }, 48: { icon: '🌫️', desc: '冻雾' },
+          51: { icon: '🌧️', desc: '毛毛雨' }, 53: { icon: '🌧️', desc: '毛毛雨' }, 55: { icon: '🌧️', desc: '毛毛雨' },
+          56: { icon: '🌧️', desc: '冻毛毛雨' }, 57: { icon: '🌧️', desc: '冻毛毛雨' },
+          61: { icon: '🌧️', desc: '小雨' }, 63: { icon: '🌧️', desc: '中雨' }, 65: { icon: '🌧️', desc: '大雨' },
+          66: { icon: '🌧️', desc: '冻雨' }, 67: { icon: '🌧️', desc: '冻雨' },
+          71: { icon: '❄️', desc: '小雪' }, 73: { icon: '❄️', desc: '中雪' }, 75: { icon: '❄️', desc: '大雪' }, 77: { icon: '❄️', desc: '雪粒' },
+          80: { icon: '🌧️', desc: '小阵雨' }, 81: { icon: '🌧️', desc: '阵雨' }, 82: { icon: '🌧️', desc: '大阵雨' },
+          85: { icon: '❄️', desc: '小阵雪' }, 86: { icon: '❄️', desc: '大阵雪' },
+          95: { icon: '⛈️', desc: '雷暴' }, 96: { icon: '⛈️', desc: '雷暴伴小冰雹' }, 99: { icon: '⛈️', desc: '雷暴伴大冰雹' }
+        };
+
+        function parseWeatherCode(code) {
+          code = code != null ? Number(code) : 0;
+          if (isNaN(code)) code = 0;
+          var info;
+          if (weatherMap[code] !== undefined) {
+            info = weatherMap[code];
+          } else if (code >= 1 && code <= 3) {
+            info = { icon: '⛅', desc: '多云' };
+          } else if (code >= 51 && code <= 67) {
+            info = { icon: '🌧️', desc: '雨' };
+          } else if (code >= 71 && code <= 77) {
+            info = { icon: '❄️', desc: '雪' };
+          } else if (code >= 80 && code <= 82) {
+            info = { icon: '🌧️', desc: '阵雨' };
+          } else if (code >= 85 && code <= 86) {
+            info = { icon: '❄️', desc: '阵雪' };
+          } else if (code >= 95 && code <= 99) {
+            info = { icon: '⛈️', desc: '雷暴' };
+          } else {
+            info = DEFAULT_WEATHER;
+          }
+          console.log('[天气] parseWeatherCode(' + code + ') =>', info.icon, info.desc);
+          return info;
+        }
+
+        function WeatherWidget() {
+          this.trigger = document.getElementById('weatherTrigger');
+          this.weatherFixed = document.getElementById('weatherFixed');
+          this.triggerIconEl = document.getElementById('weatherTriggerIcon');
+          this.popup = document.getElementById('weatherPopup');
+          this.backdrop = document.getElementById('weatherPopupBackdrop');
+          this.closeBtn = document.getElementById('weatherPopupClose');
+          this.card = document.getElementById('weatherPopupCard');
+          this.cityInput = document.getElementById('weatherCityInput');
+          this.geoBtn = document.getElementById('weatherGeoBtn');
+          this.queryBtn = document.getElementById('weatherQueryBtn');
+          this.loadingEl = document.getElementById('weatherLoading');
+          this.dataEl = document.getElementById('weatherData');
+          this.iconEl = this.card ? this.card.querySelector('.weather-icon') : document.getElementById('weatherIcon');
+          if (!this.iconEl && this.card) this.iconEl = document.getElementById('weatherIcon');
+          this.tempEl = document.getElementById('weatherTemp');
+          this.descEl = document.getElementById('weatherDesc');
+          this.windEl = document.getElementById('weatherWind');
+          this.errorEl = document.getElementById('weatherError');
+          this.forecastEl = document.getElementById('weatherForecast');
+          this.chartEl = document.getElementById('tempChart');
+          this.chartTitleEl = document.getElementById('weatherChartTitle');
+          this.chartTooltipEl = document.getElementById('weatherChartTooltip');
+          this.lastUpdatedEl = document.getElementById('weatherLastUpdated');
+          this.cache = {};
+          this.controller = null;
+          this._chartAnimation = null;
+          this.cityCoords = {
+            '北京': '39.9042,116.4074', '上海': '31.2304,121.4737', '广州': '23.1291,113.2644',
+            '深圳': '22.5431,114.0579', '杭州': '30.2741,120.1551', '成都': '30.5728,104.0668',
+            '武汉': '30.5928,114.3055', '西安': '34.3416,108.9398', '南京': '32.0603,118.7969', '苏州': '31.2989,120.5853'
+          };
+          this._bind();
+          this._applyTriggerPosition();
+          this._applyTriggerIcon();
+          this._bindTriggerDrag();
+        }
+
+        WeatherWidget.prototype._bind = function () {
+          var self = this;
+          this._triggerDidDrag = false;
+          this.trigger.addEventListener('click', function (e) {
+            if (self._triggerDidDrag) {
+              self._triggerDidDrag = false;
+              e.preventDefault();
+              e.stopPropagation();
+              return;
+            }
+            self.open();
+          });
+          this.closeBtn.addEventListener('click', function () { self.close(); });
+          this.backdrop.addEventListener('click', function () { self.close(); });
+          this.card.addEventListener('click', function (e) { e.stopPropagation(); });
+          this.queryBtn.addEventListener('click', function () { self._fetchByCity(self.cityInput.value.trim()); });
+          this.cityInput.addEventListener('change', function () { self._fetchByCity(self.cityInput.value.trim()); });
+          this.cityInput.addEventListener('input', debounce(function () {
+            var v = self.cityInput.value.trim();
+            if (v && self.cityCoords[v]) self._fetchByCity(v);
+          }, DEBOUNCE_DELAY));
+          this.cityInput.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter') self._fetchByCity(self.cityInput.value.trim());
+          });
+          this.geoBtn.addEventListener('click', function () { self._fetchByGeo(); });
+        };
+
+        WeatherWidget.prototype._applyTriggerPosition = function () {
+          if (!this.weatherFixed) return;
+          var wrap = this.weatherFixed;
+          wrap.style.left = '1rem';
+          wrap.style.top = '50%';
+          wrap.style.transform = 'translateY(-50%)';
+        };
+
+        WeatherWidget.prototype._applyTriggerIcon = function () {
+          if (!this.triggerIconEl) return;
+          try {
+            var code = localStorage.getItem(STORAGE_KEY_LAST_WEATHERCODE);
+            if (code !== null && code !== '') {
+              var icon = getTriggerIcon(parseInt(code, 10));
+              this.triggerIconEl.textContent = icon;
+            }
+          } catch (_) {}
+        };
+
+        WeatherWidget.prototype.updateTriggerIcon = function (code) {
+          if (this.triggerIconEl) {
+            this.triggerIconEl.textContent = getTriggerIcon(code);
+          }
+          try {
+            localStorage.setItem(STORAGE_KEY_LAST_WEATHERCODE, String(code != null ? Number(code) : 0));
+          } catch (_) {}
+        };
+
+        WeatherWidget.prototype._bindTriggerDrag = function () {
+          var el = this.trigger;
+          var wrap = this.weatherFixed;
+          if (!el || !wrap) return;
+          var self = this;
+          var startX, startY, startLeft, startTop;
+          var FORBIDDEN_SELECTORS = ['.music-fixed', '#btnOutdoor', '#eggTrigger', '#logoWrap'];
+          function getForbiddenRects() {
+            var list = [];
+            FORBIDDEN_SELECTORS.forEach(function (sel) {
+              var node = document.querySelector(sel);
+              if (!node) return;
+              var r = node.getBoundingClientRect();
+              if (r.width > 0 && r.height > 0) list.push(r);
+            });
+            return list;
+          }
+          function clampPosition(proposedLeft, proposedTop, wrapW, wrapH) {
+            var left = proposedLeft;
+            var top = proposedTop;
+            var rects = getForbiddenRects();
+            for (var iter = 0; iter < 8; iter++) {
+              var changed = false;
+              for (var i = 0; i < rects.length; i++) {
+                var R = rects[i];
+                var wLeft = left;
+                var wTop = top;
+                var wRight = left + wrapW;
+                var wBottom = top + wrapH;
+                var overlapX = wRight > R.left && wLeft < R.right;
+                var overlapY = wBottom > R.top && wTop < R.bottom;
+                if (!overlapX || !overlapY) continue;
+                var pushLeft = R.left - wRight;
+                var pushRight = R.right - wLeft;
+                var pushUp = R.top - wBottom;
+                var pushDown = R.bottom - wTop;
+                if (Math.abs(pushLeft) <= Math.abs(pushRight)) {
+                  left += pushLeft;
+                  changed = true;
+                } else {
+                  left += pushRight;
+                  changed = true;
+                }
+                wLeft = left;
+                wRight = left + wrapW;
+                pushUp = R.top - (top + wrapH);
+                pushDown = R.bottom - top;
+                if (wBottom > R.top && wTop < R.bottom) {
+                  if (Math.abs(pushUp) <= Math.abs(pushDown)) {
+                    top += pushUp;
+                    changed = true;
+                  } else {
+                    top += pushDown;
+                    changed = true;
+                  }
+                }
+              }
+              if (!changed) break;
+            }
+            var vw = window.innerWidth;
+            var vh = window.innerHeight;
+            var logo = document.querySelector('#logoWrap');
+            if (logo) {
+              var r = logo.getBoundingClientRect();
+              if (r.width > 0 && r.height > 0) {
+                if (left < r.right && top < r.bottom) {
+                  var pushRight = r.right - left;
+                  var pushDown = r.bottom - top;
+                  if (pushRight <= pushDown) {
+                    left = r.right;
+                  } else {
+                    top = r.bottom;
+                  }
+                }
+              }
+            }
+            var music = document.querySelector('.music-fixed');
+            if (music) {
+              var r = music.getBoundingClientRect();
+              if (r.width > 0 && r.height > 0) {
+                if (left + wrapW > r.left && top < r.bottom) {
+                  var pushLeft = (left + wrapW) - r.left;
+                  var pushDown = r.bottom - top;
+                  if (pushLeft <= pushDown) {
+                    left = r.left - wrapW;
+                  } else {
+                    top = r.bottom;
+                  }
+                }
+              }
+            }
+            left = Math.max(0, Math.min(left, vw - wrapW));
+            top = Math.max(0, Math.min(top, vh - wrapH));
+            return { left: left, top: top };
+          }
+          function onMove(e) {
+            self._triggerDidDrag = true;
+            var dx = e.clientX - startX;
+            var dy = e.clientY - startY;
+            var proposedLeft = startLeft + dx;
+            var proposedTop = startTop + dy;
+            var W = wrap.offsetWidth;
+            var H = wrap.offsetHeight;
+            var clamped = clampPosition(proposedLeft, proposedTop, W, H);
+            wrap.style.left = clamped.left + 'px';
+            wrap.style.top = clamped.top + 'px';
+            wrap.style.transform = 'none';
+          }
+          function onUp() {
+            document.removeEventListener('mousemove', onMove);
+            document.removeEventListener('mouseup', onUp);
+            try {
+              var rect = wrap.getBoundingClientRect();
+              localStorage.setItem(STORAGE_KEY_TRIGGER_POS, JSON.stringify({ left: rect.left, top: rect.top }));
+            } catch (_) {}
+          }
+          el.addEventListener('mousedown', function (e) {
+            if (e.button !== 0) return;
+            var rect = wrap.getBoundingClientRect();
+            startX = e.clientX;
+            startY = e.clientY;
+            startLeft = rect.left;
+            startTop = rect.top;
+            document.addEventListener('mousemove', onMove);
+            document.addEventListener('mouseup', onUp);
+          });
+        };
+
+        WeatherWidget.prototype.open = function () {
+          this.popup.classList.add('show');
+          this.popup.setAttribute('aria-hidden', 'false');
+          if (!this.cityInput.value.trim()) this.cityInput.value = '北京';
+          this.iconEl = this.card ? this.card.querySelector('.weather-icon') : document.getElementById('weatherIcon');
+          if (!this.iconEl && this.card) this.iconEl = document.getElementById('weatherIcon');
+          this._fetchByCity(this.cityInput.value.trim());
+        };
+
+        WeatherWidget.prototype.close = function () {
+          this.popup.classList.remove('show');
+          this.popup.setAttribute('aria-hidden', 'true');
+        };
+
+        WeatherWidget.prototype._showLoading = function () {
+          this.loadingEl.hidden = false;
+          this.dataEl.hidden = true;
+          this.errorEl.hidden = true;
+          this.loadingEl.textContent = '正在获取天气...';
+        };
+
+        WeatherWidget.prototype._showError = function (msg) {
+          this.loadingEl.hidden = true;
+          this.dataEl.hidden = true;
+          this.errorEl.hidden = false;
+          this.errorEl.textContent = msg || '获取天气失败，请稍后重试';
+        };
+
+        WeatherWidget.prototype._codeToTheme = function (code, hour) {
+          if (hour >= 18 || hour < 6) return 'night';
+          if (code <= 2) return 'sunny';
+          if (code >= 51 && code <= 67) return 'rain';
+          if (code >= 71 && code <= 86) return 'snow';
+          return '';
+        };
+
+        WeatherWidget.prototype._showCurrent = function (temp, desc, windSpeed, code, updatedAt) {
+          code = code != null ? Number(code) : 0;
+          if (isNaN(code)) code = 0;
+          var info = parseWeatherCode(code);
+          this.loadingEl.hidden = true;
+          this.errorEl.hidden = true;
+          this.dataEl.hidden = false;
+          if (this.iconEl) {
+            this.iconEl.textContent = info.icon;
+            var dupCount = document.querySelectorAll('#weatherIcon').length;
+            var isInCard = this.card && this.card.contains(this.iconEl);
+            console.log('[天气] DOM 图标已更新:', this.iconEl.textContent, '| 元素id:', this.iconEl.id, '| 页面中 #weatherIcon 数量:', dupCount, '| iconEl 在 card 内:', isInCard);
+          } else {
+            console.warn('[天气] iconEl 为空，无法更新图标 (card.querySelector(".weather-icon") 与 getElementById 均未找到)');
+          }
+          this.tempEl.textContent = temp + ' °C';
+          this.descEl.textContent = info.desc;
+          this.windEl.textContent = '风速 ' + windSpeed + ' km/h';
+          if (this.lastUpdatedEl && updatedAt != null) {
+            this.lastUpdatedEl.textContent = '更新于 ' + new Date(updatedAt).toLocaleTimeString();
+            this.lastUpdatedEl.hidden = false;
+          } else if (this.lastUpdatedEl) {
+            this.lastUpdatedEl.hidden = true;
+          }
+          this.card.classList.remove('weather-theme-sunny', 'weather-theme-rain', 'weather-theme-snow', 'weather-theme-night');
+          var theme = this._codeToTheme(code, (new Date()).getHours());
+          if (theme) this.card.classList.add('weather-theme-' + theme);
+        };
+
+        WeatherWidget.prototype._showForecast = function (daily) {
+          if (!daily || !daily.time || !daily.weathercode || !daily.temperature_2m_max || !daily.temperature_2m_min) return;
+          var weekDays = ['日', '一', '二', '三', '四', '五', '六'];
+          var html = '';
+          var days = Math.min(5, daily.time.length);
+          for (var i = 0; i < days; i++) {
+            var dateStr = daily.time[i];
+            var code = daily.weathercode[i] || 0;
+            var info = parseWeatherCode(code);
+            var maxT = daily.temperature_2m_max[i];
+            var minT = daily.temperature_2m_min[i];
+            var humidity = (daily.relative_humidity_2m_mean && daily.relative_humidity_2m_mean[i] != null) ? Math.round(daily.relative_humidity_2m_mean[i]) : '--';
+            var wind = (daily.windspeed_10m_max != null && daily.windspeed_10m_max[i] != null) ? Number(daily.windspeed_10m_max[i]).toFixed(2) : '--';
+            var label = dateStr.length >= 10 ? dateStr.slice(5, 10) : dateStr;
+            var d = new Date(dateStr + 'T12:00:00');
+            var weekDay = weekDays[d.getDay()];
+            var shortDate = dateStr.length >= 10 ? dateStr.slice(5, 7) + '/' + dateStr.slice(8, 10) : dateStr;
+            var dateLabel = shortDate + '星期' + weekDay;
+            html += '<div class="weather-day"><div class="day-date">' + dateLabel + '</div><div class="day-icon">' + info.icon + '</div><div class="day-desc">' + info.desc + '</div><div class="day-temp">温度: ' + maxT + '℃</div><div class="day-humidity">湿度: ' + humidity + '%</div><div class="day-wind">风速: ' + wind + ' m/s</div></div>';
+          }
+          this.forecastEl.innerHTML = html;
+        };
+
+        WeatherWidget.prototype._drawChartFrame = function (maxArr, minArr, progress) {
+          var c = this.chartEl;
+          if (!c || !maxArr || !minArr) return;
+          var ctx = c.getContext('2d');
+          var logicalW = c.clientWidth;
+          var logicalH = c.clientHeight;
+          var pad = { top: 8, right: 8, bottom: 8, left: 8 };
+          var plotW = logicalW - pad.left - pad.right;
+          var plotH = logicalH - pad.top - pad.bottom;
+          var n = Math.min(5, maxArr.length, minArr.length);
+          if (n < 2) return;
+          var maxT = -Infinity;
+          var minT = Infinity;
+          for (var i = 0; i < n; i++) {
+            if (maxArr[i] > maxT) maxT = maxArr[i];
+            if (minArr[i] < minT) minT = minArr[i];
+          }
+          var range = maxT - minT || 1;
+          ctx.clearRect(0, 0, logicalW, logicalH);
+          var step = plotW / (n - 1);
+          var segs = n - 1;
+          var endF = progress * segs;
+          var drawLine = function (arr, color) {
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            for (var j = 0; j < n; j++) {
+              var t = j / segs;
+              if (t > progress) {
+                if (j > 0) {
+                  var prev = j - 1;
+                  var frac = (progress * segs - prev) / 1;
+                  var x = pad.left + (prev + frac) * step;
+                  var y = pad.top + plotH - ((arr[prev] + frac * (arr[j] - arr[prev]) - minT) / range) * plotH;
+                  ctx.lineTo(x, y);
+                }
+                break;
+              }
+              var x = pad.left + j * step;
+              var y = pad.top + plotH - ((arr[j] - minT) / range) * plotH;
+              if (j === 0) ctx.moveTo(x, y);
+              else ctx.lineTo(x, y);
+            }
+            ctx.stroke();
+          };
+          drawLine(maxArr, '#e11d48');
+          drawLine(minArr, '#3b82f6');
+        };
+
+        WeatherWidget.prototype._drawChart = function (maxArr, minArr, dates) {
+          var c = this.chartEl;
+          if (!c || !maxArr || !minArr) return;
+          var n = Math.min(5, maxArr.length, minArr.length);
+          if (n < 2) return;
+          if (this.chartTitleEl) this.chartTitleEl.textContent = '未来五天天气预报 - ' + (this.currentCity || '');
+          this._chartMax = maxArr.slice(0, n);
+          this._chartMin = minArr.slice(0, n);
+          this._chartDates = dates ? dates.slice(0, n) : [];
+          this._chartPad = { top: 8, right: 8, bottom: 8, left: 8 };
+          var dpr = window.devicePixelRatio || 1;
+          var logicalW = c.clientWidth;
+          var logicalH = c.clientHeight;
+          c.width = logicalW * dpr;
+          c.height = logicalH * dpr;
+          var ctx = c.getContext('2d');
+          ctx.scale(dpr, dpr);
+          var self = this;
+          if (self._chartAnimation) cancelAnimationFrame(self._chartAnimation);
+          var progress = 0;
+          function animate() {
+            progress += 0.02;
+            if (progress > 1) progress = 1;
+            self._drawChartFrame(maxArr, minArr, progress);
+            if (progress < 1) self._chartAnimation = requestAnimationFrame(animate);
+          }
+          animate();
+          this._bindChartHover(logicalW, logicalH);
+        };
+
+        WeatherWidget.prototype._bindChartHover = function (logicalW, logicalH) {
+          var c = this.chartEl;
+          var tip = this.chartTooltipEl;
+          if (!c || !tip) return;
+          var self = this;
+          var pad = this._chartPad || { top: 8, right: 8, bottom: 8, left: 8 };
+          var plotW = logicalW - pad.left - pad.right;
+          var n = this._chartMax ? this._chartMax.length : 0;
+          if (n < 2) return;
+          var step = plotW / (n - 1);
+          function onMove(e) {
+            var rect = c.getBoundingClientRect();
+            var wrap = c.parentElement;
+            var wrapRect = wrap ? wrap.getBoundingClientRect() : rect;
+            var x = e.clientX - rect.left;
+            var y = e.clientY - rect.top;
+            if (x < pad.left || x > pad.left + plotW || y < pad.top || y > logicalH - pad.bottom) {
+              tip.classList.remove('show');
+              return;
+            }
+            var idx = Math.round((x - pad.left) / step);
+            if (idx < 0) idx = 0;
+            if (idx >= n) idx = n - 1;
+            var maxT = this._chartMax[idx];
+            var minT = this._chartMin[idx];
+            var dateStr = this._chartDates[idx] || '';
+            var label = dateStr.length >= 10 ? dateStr.slice(5, 10) : dateStr;
+            tip.textContent = (label ? label + '\n' : '') + '最高: ' + maxT + '℃\n最低: ' + minT + '℃';
+            tip.classList.add('show');
+            var tx = e.clientX - wrapRect.left + 12;
+            var ty = e.clientY - wrapRect.top - 8;
+            if (tx + tip.offsetWidth > wrapRect.width) tx = e.clientX - wrapRect.left - tip.offsetWidth - 8;
+            if (ty < 0) ty = e.clientY - wrapRect.top + 12;
+            tip.style.left = tx + 'px';
+            tip.style.top = ty + 'px';
+          }
+          function onLeave() {
+            tip.classList.remove('show');
+          }
+          c.removeEventListener('mousemove', self._chartMoveHandler);
+          c.removeEventListener('mouseleave', self._chartLeaveHandler);
+          self._chartMoveHandler = function (e) { onMove.call(self, e); };
+          self._chartLeaveHandler = onLeave;
+          c.addEventListener('mousemove', self._chartMoveHandler);
+          c.addEventListener('mouseleave', self._chartLeaveHandler);
+        };
+
+        WeatherWidget.prototype._fetch = function (lat, lon, cityLabel) {
+          this.currentCity = cityLabel || this.cityInput.value.trim() || '城市';
+          var key = 'w_' + lat + '_' + lon;
+          var now = Date.now();
+          if (this.cache[key] && (now - this.cache[key].time) < TTL_WEATHER) {
+            var c = this.cache[key].data;
+            console.log('[天气] 使用缓存 key=', key, 'weathercode=', c.weathercode);
+            this._showCurrent(c.temperature, c.desc, c.windspeed, c.weathercode, this.cache[key].time);
+            this.updateTriggerIcon(c.weathercode);
+            if (c.daily) {
+              this._showForecast(c.daily);
+              this._drawChart(c.daily.temperature_2m_max, c.daily.temperature_2m_min, c.daily.time);
+            }
+            return;
+          }
+          var self = this;
+          this._showLoading();
+          this.controller && this.controller.abort();
+          this.controller = new AbortController();
+          var signal = this.controller.signal;
+          var url = 'https://api.open-meteo.com/v1/forecast?latitude=' + encodeURIComponent(lat) + '&longitude=' + encodeURIComponent(lon) + '&current_weather=true&daily=temperature_2m_max,temperature_2m_min,weathercode,relative_humidity_2m_mean,windspeed_10m_max&timezone=auto';
+          (async function () {
+            try {
+              var res = await fetchWithTimeout(url, FETCH_TIMEOUT, { signal: signal });
+              if (!res.ok) throw new Error('网络错误');
+              var data = await res.json();
+              var w = data.current_weather;
+              if (!w) throw new Error('未返回天气数据');
+              var code = w.weathercode != null ? Number(w.weathercode) : 0;
+              if (isNaN(code)) code = 0;
+              console.log('[天气] API 返回 current_weather.weathercode =', w.weathercode, '=> 归一化 code =', code);
+              var info = parseWeatherCode(code);
+              var daily = data.daily || null;
+              self.cache[key] = {
+                data: {
+                  temperature: w.temperature,
+                  desc: info.desc,
+                  windspeed: w.windspeed,
+                  weathercode: code,
+                  daily: daily
+                },
+                time: Date.now()
+              };
+              console.log('[天气] 已写入缓存 key=', key, 'weathercode=', code);
+              self._showCurrent(w.temperature, info.desc, w.windspeed, code, Date.now());
+              self.updateTriggerIcon(code);
+              if (daily) {
+                self._showForecast(daily);
+                self._drawChart(daily.temperature_2m_max, daily.temperature_2m_min, daily.time);
+              }
+            } catch (e) {
+              if (e && e.name === 'AbortError') return;
+              self._showError(e && e.message ? e.message : '获取天气失败，请稍后重试');
+            }
+          })();
+        };
+
+        WeatherWidget.prototype._fetchByCity = function (cityName) {
+          var coords = this.cityCoords[cityName];
+          if (!coords) {
+            this._showError('请从列表中选择城市');
+            return;
+          }
+          var p = coords.split(',');
+          this._fetch(p[0], p[1], cityName);
+        };
+
+        WeatherWidget.prototype._fetchByGeo = function () {
+          var self = this;
+          if (!navigator.geolocation) {
+            this._showError('当前浏览器不支持定位');
+            return;
+          }
+          var last = null;
+          try {
+            var raw = localStorage.getItem(STORAGE_KEY_LOCATION);
+            if (raw) {
+              last = JSON.parse(raw);
+              if (last && last.lat != null && last.lon != null && (Date.now() - (last.time || 0)) < TTL_LOCATION) {
+                this.cityInput.value = '当前定位';
+                this._fetch(String(last.lat), String(last.lon), '当前定位');
+                return;
+              }
+            }
+          } catch (_) {}
+          this._showLoading();
+          navigator.geolocation.getCurrentPosition(
+            function (pos) {
+              var lat = pos.coords.latitude;
+              var lon = pos.coords.longitude;
+              try {
+                localStorage.setItem(STORAGE_KEY_LOCATION, JSON.stringify({ lat: lat, lon: lon, time: Date.now() }));
+              } catch (_) {}
+              self.cityInput.value = '当前定位';
+              self._fetch(String(lat), String(lon), '当前定位');
+            },
+            function () { self._showError('无法获取位置，请允许定位或选择城市'); }
+          );
+        };
+
+        new WeatherWidget();
+      })();
 
       function startLetterReveal() {
         var lines = document.querySelectorAll('.letter-line');
