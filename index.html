@@ -36,7 +36,7 @@
     }
 
     /*
-      虚线框位置与大小：只改下面 :root 里的 --door-* / --env-* / --photo2-* / --note1-* / --note2-* / --note3-* / --note4-* 即可生效。
+      虚线框位置与大小：只改下面 :root 里的 --door-* / --env-* / --photo2-* / --note1-* / --note2-* / --note3-* / --note4-* / --firework-* 即可生效。
       保存后若未变化请强制刷新（Ctrl+F5 或 Cmd+Shift+R）。百分比相对于背景图容器。
     */
     :root {
@@ -82,6 +82,11 @@
       --note4-left: 66%;
       --note4-width: 32%;
       --note4-height: 22%;
+      /* bg2 页面烟花区虚线框：点击框内在该点放小烟花 */
+      --firework-top: 30%;
+      --firework-left: 35%;
+      --firework-width: 28%;
+      --firework-height: 30%;
     }
 
     html {
@@ -563,6 +568,47 @@
       height: var(--photo2-height, 28%);
       cursor: pointer;
       z-index: 1;
+    }
+
+    /* bg2 页面烟花区：虚线框已隐藏，点击框内在该点放小烟花 */
+    .firework-hotspot {
+      position: absolute;
+      top: var(--firework-top, 25%);
+      left: var(--firework-left, 15%);
+      width: var(--firework-width, 28%);
+      height: var(--firework-height, 35%);
+      cursor: pointer;
+      z-index: 1;
+      box-sizing: border-box;
+    }
+
+    /* 小烟花爆炸容器与粒子 */
+    .firework-burst {
+      position: fixed;
+      width: 0;
+      height: 0;
+      pointer-events: none;
+      z-index: 200;
+    }
+    .firework-particle {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+      animation: fireworkBurst 0.75s ease-out forwards;
+    }
+    @keyframes fireworkBurst {
+      0% {
+        transform: translate(-50%, -50%) scale(1);
+        opacity: 1;
+      }
+      100% {
+        transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(0.2);
+        opacity: 0;
+      }
     }
 
     /* 房间内照片弹窗：显示图片+文字，点击遮罩关闭，背景透明 */
@@ -1486,6 +1532,7 @@
           <span class="envelope-bubble">点击信封展开信件</span>
         </div>
         <div class="photo2-hotspot" id="photo2Hotspot" aria-label="照片"></div>
+        <div class="firework-hotspot" id="fireworkHotspot" aria-label="点击放烟花"></div>
       </div>
     </div>
     <!-- 房间内照片弹窗：点击遮罩关闭 -->
@@ -1707,8 +1754,9 @@
           document.removeEventListener('pointermove', onPointerMove);
           document.removeEventListener('pointerup', onPointerUp);
           document.removeEventListener('pointercancel', onPointerUp);
-          if (!hasMoved && start.target && extraStartEls.indexOf(start.target) !== -1) {
-            onTapWhenStartOn(start.target);
+          if (!hasMoved && start.target) {
+            var hit = extraStartEls.filter(function (el) { return el && (el === start.target || el.contains(start.target)); })[0];
+            if (hit) onTapWhenStartOn(hit, { x: start.x, y: start.y });
           }
         }
 
@@ -1725,9 +1773,30 @@
       }
 
       makePannable(introPan, document.getElementById('introPanHandle'), introPanContent, document.getElementById('introPanImg'), '--intro-dx', '--intro-dy', {
-        extraStartEls: ['note1Hotspot', 'note2Hotspot', 'note3Hotspot', 'note4Hotspot'].map(function (id) { return document.getElementById(id); }).filter(Boolean),
-        onTapWhenStartOn: function (targetEl) {
+        extraStartEls: ['note1Hotspot', 'note2Hotspot', 'note3Hotspot', 'note4Hotspot', 'doorHotspot'].map(function (id) { return document.getElementById(id); }).filter(Boolean),
+        onTapWhenStartOn: function (targetEl, _point) {
           var id = targetEl.id;
+          if (id === 'doorHotspot') {
+            var popup = document.getElementById('doorPwdPopup');
+            var firstInput = document.getElementById('doorPwd0');
+            if (popup) {
+              var in0 = document.getElementById('doorPwd0');
+              var in1 = document.getElementById('doorPwd1');
+              var in2 = document.getElementById('doorPwd2');
+              var in3 = document.getElementById('doorPwd3');
+              var err = document.getElementById('doorPwdErr');
+              if (in0) in0.value = '';
+              if (in1) in1.value = '';
+              if (in2) in2.value = '';
+              if (in3) in3.value = '';
+              if (err) err.classList.remove('show');
+              [in0, in1, in2, in3].forEach(function (inp) { if (inp) inp.classList.remove('error'); });
+              popup.classList.add('show');
+              popup.setAttribute('aria-hidden', 'false');
+              if (firstInput) setTimeout(function () { firstInput.focus(); }, 100);
+            }
+            return;
+          }
           var popup = id === 'note1Hotspot' ? document.getElementById('note1Popup') : id === 'note2Hotspot' ? document.getElementById('note2Popup') : id === 'note3Hotspot' ? document.getElementById('note3Popup') : id === 'note4Hotspot' ? document.getElementById('note4Popup') : null;
           if (popup) {
             popup.classList.add('show');
@@ -1735,7 +1804,51 @@
           }
         }
       });
-      makePannable(roomPan, document.getElementById('roomPanHandle'), roomPanContent, document.getElementById('roomPanImg'), '--room-dx', '--room-dy');
+      makePannable(roomPan, document.getElementById('roomPanHandle'), roomPanContent, document.getElementById('roomPanImg'), '--room-dx', '--room-dy', {
+        extraStartEls: [envelopeHotspot, document.getElementById('photo2Hotspot'), document.getElementById('fireworkHotspot')].filter(Boolean),
+        onTapWhenStartOn: function (targetEl, point) {
+          var id = targetEl.id;
+          if (id === 'envelopeHotspot') {
+            document.body.classList.add('bg2-blur');
+            roomView.classList.add('hidden');
+            mainPage.classList.add('visible');
+            setTimeout(function () { startLetterReveal(); }, 600);
+            return;
+          }
+          if (id === 'photo2Hotspot') {
+            var photo2Popup = document.getElementById('photo2Popup');
+            if (photo2Popup) {
+              photo2Popup.classList.add('show');
+              photo2Popup.setAttribute('aria-hidden', 'false');
+            }
+            return;
+          }
+          if (id === 'fireworkHotspot' && point) {
+            var fireworkColors = ['#ffd700', '#ff8c00', '#ff6b6b', '#ffb347', '#ff69b4', '#ffec8b', '#ff6347', '#ffa07a'];
+            var burst = document.createElement('div');
+            burst.className = 'firework-burst';
+            burst.style.left = point.x + 'px';
+            burst.style.top = point.y + 'px';
+            var n = 14;
+            for (var i = 0; i < n; i++) {
+              var angle = (Math.PI * 2 * i) / n + Math.random() * 0.5;
+              var dist = 35 + Math.random() * 45;
+              var dx = Math.cos(angle) * dist;
+              var dy = Math.sin(angle) * dist;
+              var p = document.createElement('div');
+              p.className = 'firework-particle';
+              p.style.backgroundColor = fireworkColors[Math.floor(Math.random() * fireworkColors.length)];
+              p.style.setProperty('--dx', dx + 'px');
+              p.style.setProperty('--dy', dy + 'px');
+              burst.appendChild(p);
+            }
+            document.body.appendChild(burst);
+            setTimeout(function () {
+              if (burst.parentNode) burst.parentNode.removeChild(burst);
+            }, 800);
+          }
+        }
+      });
 
       var DOOR_PASSWORD = '1972';
 
@@ -1820,13 +1933,6 @@
         });
       });
 
-      doorHotspot.addEventListener('click', function () {
-        clearDoorPwd();
-        doorPwdPopup.classList.add('show');
-        doorPwdPopup.setAttribute('aria-hidden', 'false');
-        setTimeout(function () { doorPwdInputs[0].focus(); }, 100);
-      });
-
       var note1Hotspot = document.getElementById('note1Hotspot');
       var note2Hotspot = document.getElementById('note2Hotspot');
       var note1Popup = document.getElementById('note1Popup');
@@ -1873,10 +1979,6 @@
       var photo2Hotspot = document.getElementById('photo2Hotspot');
       var photo2Popup = document.getElementById('photo2Popup');
       var photo2PopupCard = document.getElementById('photo2PopupCard');
-      photo2Hotspot.addEventListener('click', function () {
-        photo2Popup.classList.add('show');
-        photo2Popup.setAttribute('aria-hidden', 'false');
-      });
       photo2Popup.addEventListener('click', function (e) {
         if (e.target === photo2Popup) {
           photo2Popup.classList.remove('show');
@@ -1884,15 +1986,6 @@
         }
       });
       photo2PopupCard.addEventListener('click', function (e) { e.stopPropagation(); });
-
-      envelopeHotspot.addEventListener('click', function () {
-        document.body.classList.add('bg2-blur');
-        roomView.classList.add('hidden');
-        mainPage.classList.add('visible');
-        setTimeout(function () {
-          startLetterReveal();
-        }, 600);
-      });
 
       // 信件页「返回」：回到 bg2 房间，可重新点击信封展开
       var btnBack = document.getElementById('btnBack');
