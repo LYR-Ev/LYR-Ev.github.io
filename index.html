@@ -1940,7 +1940,7 @@
           <p class="msg-error" id="msgError" hidden></p>
         </div>
         <div class="msg-input-row">
-          <input type="text" class="msg-input" id="msgInput" placeholder="写一句想说的话..." maxlength="500" autocomplete="off" aria-label="留言内容">
+          <input type="text" class="msg-input" id="msgInput" placeholder="写一句想说的话（最多200字）" maxlength="200" autocomplete="off" aria-label="留言内容">
           <button type="button" class="msg-send" id="msgSend">发送</button>
         </div>
       </div>
@@ -2024,6 +2024,12 @@
       var msgModal, msgBackdrop, msgCard, msgClose;
       var msgListWrap, msgList, msgLoading, msgEmpty, msgError;
       var msgInput, msgSend;
+      /** 留言字数上限，防止撑爆 UI */
+      var MSG_MAX_LENGTH = 200;
+      /** 1 秒内只能发一条评论或点一个赞（毫秒） */
+      var ACTION_COOLDOWN_MS = 1000;
+      var lastSendTime = 0;
+      var lastLikeTime = 0;
 
       function getOrCreateUserId() {
         var key = 'msg_wall_user_id';
@@ -2114,7 +2120,25 @@
           }, 2000);
           return;
         }
+        if (text.length > MSG_MAX_LENGTH) {
+          showError('留言最多 ' + MSG_MAX_LENGTH + ' 字');
+          setTimeout(function () {
+            if (msgList.childElementCount > 0) setState('list'); else setState('empty');
+            if (msgError) msgError.hidden = true;
+          }, 2000);
+          return;
+        }
+        var now = Date.now();
+        if (now - lastSendTime < ACTION_COOLDOWN_MS) {
+          showError('发送太频繁，请稍后再试');
+          setTimeout(function () {
+            if (msgList.childElementCount > 0) setState('list'); else setState('empty');
+            if (msgError) msgError.hidden = true;
+          }, 1500);
+          return;
+        }
         if (msgSend.disabled) return;
+        lastSendTime = now;
         msgSend.disabled = true;
         msgSend.textContent = '发送中...';
         if (!supabase) { msgSend.disabled = false; msgSend.textContent = '发送'; showError('未初始化 Supabase'); return; }
@@ -2140,6 +2164,16 @@
       }
       function toggleLike(docId, isLiked) {
         if (!supabase || !docId) return;
+        var now = Date.now();
+        if (now - lastLikeTime < ACTION_COOLDOWN_MS) {
+          showError('操作太频繁，请稍后再试');
+          setTimeout(function () {
+            if (msgList.childElementCount > 0) setState('list'); else setState('empty');
+            if (msgError) msgError.hidden = true;
+          }, 1500);
+          return;
+        }
+        lastLikeTime = now;
         var userId = getOrCreateUserId();
         supabase.from(TABLE_MESSAGES).select('likes, liked_users').eq('id', docId).single()
           .then(function (result) {
