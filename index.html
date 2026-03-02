@@ -2006,31 +2006,23 @@
     <source src="loretto-productions-cinematic-soft-piano-425946.mp3" type="audio/mpeg">
   </audio>
 
-  <!-- Firebase Web SDK v10（Compat，用于留言墙 Firestore） -->
-  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+  <!-- 留言墙后端：Supabase JS SDK（表 messages: id, text, created_at, likes, liked_users；需在 Supabase 控制台开启 Realtime） -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <script>
-    /* 留言墙弹窗 - Firebase Firestore 实时留言（内联，与 index 同文件） */
+    /* ========== 留言墙 - Supabase 后端 ==========
+     * 表 messages 结构：id (uuid), text (text), created_at (timestamptz), likes (int), liked_users (text[])
+     * 请在 Supabase Dashboard -> Database -> Replication 中为 messages 表开启 Realtime
+     */
     (function () {
       'use strict';
-
-      // ========== Firebase 配置（请替换为你的项目配置） ==========
-    const firebaseConfig = {
-      apiKey: "AIzaSyC1_EWlIdUUSXCaSs2A2MpciwhbxjcMtmE",
-      authDomain: "house-explorer-27b9d.firebaseapp.com",
-      projectId: "house-explorer-27b9d",
-      storageBucket: "house-explorer-27b9d.firebasestorage.app",
-      messagingSenderId: "932733013945",
-      appId: "1:932733013945:web:97df96cfd06df1ff117068",
-      measurementId: "G-TYKXXDKY9J"
-    };
-
-      var COLLECTION_MESSAGES = 'messages';
+      var SUPABASE_URL = 'https://sllwzhjnngjxvcubgqzp.supabase.co';
+      var SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNsbHd6aGpubmdqeHZjdWJncXpwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI0MjI4MjAsImV4cCI6MjA4Nzk5ODgyMH0.5ybei82C_VbcumDJW-Xft0LK3EE3H-Zutvl8NQuZUu4';
+      var TABLE_MESSAGES = 'messages';
+      var supabase = null;
       var msgModal, msgBackdrop, msgCard, msgClose;
       var msgListWrap, msgList, msgLoading, msgEmpty, msgError;
       var msgInput, msgSend;
 
-      /** 获取或生成当前用户唯一 id（localStorage），用于点赞防重复 */
       function getOrCreateUserId() {
         var key = 'msg_wall_user_id';
         try {
@@ -2043,78 +2035,69 @@
           return 'u_' + Date.now() + '_' + Math.random().toString(36).slice(2, 11);
         }
       }
-
       function setState(which) {
         if (msgLoading) msgLoading.hidden = which !== 'loading';
         if (msgList) msgList.hidden = which !== 'list';
         if (msgEmpty) msgEmpty.hidden = which !== 'empty';
         if (msgError) msgError.hidden = which !== 'error';
       }
-
       function showError(text) {
         if (msgError) {
           msgError.textContent = text || '网络异常，请稍后重试';
           setState('error');
         }
       }
-
       function formatTime(t) {
-        if (!t || !t.toDate) return '';
-        var d = t.toDate();
-        return d.toLocaleString('zh-CN', {
-          year: 'numeric',
-          month: '2-digit',
-          day: '2-digit',
-          hour: '2-digit',
-          minute: '2-digit',
-        });
+        var d;
+        if (typeof t === 'string') d = new Date(t);
+        else if (t && t.toDate) d = t.toDate();
+        else if (t) d = new Date(t);
+        else return '';
+        if (isNaN(d.getTime())) return '';
+        return d.toLocaleString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
       }
-
       function escapeHtml(s) {
         var div = document.createElement('div');
         div.textContent = s;
         return div.innerHTML;
       }
-
-      /** 渲染留言列表（含点赞按钮与数量；按 time 倒序；onSnapshot 触发时自动刷新） */
-      function renderMessages(snapshot) {
+      function renderMessages(messages) {
         setState('loading');
-        if (!snapshot || !snapshot.docs || snapshot.docs.length === 0) {
-          setState('empty');
-          return;
-        }
+        if (!messages || messages.length === 0) { setState('empty'); return; }
         var userId = getOrCreateUserId();
         var html = '';
-        snapshot.docs.forEach(function (doc) {
-          var data = doc.data();
-          var text = (data.text || '').trim();
-          if (!text) return;
-          var timeStr = formatTime(data.time);
-          var likes = typeof data.likes === 'number' ? data.likes : 0;
-          var likedUsers = Array.isArray(data.likedUsers) ? data.likedUsers : [];
+        for (var i = 0; i < messages.length; i++) {
+          var row = messages[i];
+          var text = (row.text || '').trim();
+          if (!text) continue;
+          var timeStr = formatTime(row.created_at);
+          var likes = typeof row.likes === 'number' ? row.likes : 0;
+          var likedUsers = Array.isArray(row.liked_users) ? row.liked_users : [];
           var isLiked = likedUsers.indexOf(userId) !== -1;
           var btnClass = 'msg-like-btn' + (isLiked ? ' liked' : '');
-          var docId = escapeHtml(doc.id);
-          html +=
-            '<li class="msg-bubble" data-doc-id="' + docId + '">' +
-            '<div class="msg-bubble-text">' + escapeHtml(text) + '</div>' +
-            '<div class="msg-bubble-time">' + escapeHtml(timeStr) + '</div>' +
-            '<div class="msg-bubble-footer">' +
-            '<button type="button" class="' + btnClass + '" data-doc-id="' + docId + '" data-liked="' + (isLiked ? 'true' : 'false') + '" aria-label="点赞">👍 <span class="msg-like-count">' + likes + '</span></button>' +
-            '</div></li>';
-        });
+          var id = escapeHtml(row.id);
+          html += '<li class="msg-bubble" data-doc-id="' + id + '"><div class="msg-bubble-text">' + escapeHtml(text) + '</div><div class="msg-bubble-time">' + escapeHtml(timeStr) + '</div><div class="msg-bubble-footer"><button type="button" class="' + btnClass + '" data-doc-id="' + id + '" data-liked="' + (isLiked ? 'true' : 'false') + '" aria-label="点赞">👍 <span class="msg-like-count">' + likes + '</span></button></div></li>';
+        }
         msgList.innerHTML = html;
         setState('list');
         msgListWrap.scrollTop = 0;
       }
-
+      function fetchAndRender() {
+        if (!supabase) return;
+        setState('loading');
+        supabase.from(TABLE_MESSAGES).select('id, text, created_at, likes, liked_users').order('created_at', { ascending: false })
+          .then(function (result) {
+            if (result.error) { showError('加载失败：' + (result.error.message || '请检查网络或 Supabase 策略')); return; }
+            renderMessages(result.data || []);
+          })
+          .catch(function (err) { showError('加载失败：' + (err.message || '请检查网络')); });
+      }
       function sendMessage() {
         var text = (msgInput.value || '').trim();
         if (!text) {
           showError('请输入留言内容');
           setTimeout(function () {
-            if (msgList.childElementCount > 0) setState('list');
-            else setState('empty');
+            if (msgList.childElementCount > 0) setState('list'); else setState('empty');
             if (msgError) msgError.hidden = true;
           }, 2000);
           return;
@@ -2122,24 +2105,14 @@
         if (msgSend.disabled) return;
         msgSend.disabled = true;
         msgSend.textContent = '发送中...';
-        var db = window.__msgWallDb;
-        if (!db) {
-          msgSend.disabled = false;
-          msgSend.textContent = '发送';
-          showError('未配置 Firebase 或初始化失败');
-          return;
-        }
-        db.collection(COLLECTION_MESSAGES)
-          .add({
-            text: text,
-            time: window.firebase.firestore.FieldValue.serverTimestamp(),
-            likes: 0,
-            likedUsers: [],
-          })
-          .then(function () {
+        if (!supabase) { msgSend.disabled = false; msgSend.textContent = '发送'; showError('未初始化 Supabase'); return; }
+        supabase.from(TABLE_MESSAGES).insert([{ text: text, created_at: new Date().toISOString(), likes: 0, liked_users: [] }])
+          .then(function (result) {
             msgInput.value = '';
             msgSend.disabled = false;
             msgSend.textContent = '发送';
+            if (result.error) showError('发送失败：' + (result.error.message || '请检查网络'));
+            else fetchAndRender();
           })
           .catch(function (err) {
             msgSend.disabled = false;
@@ -2147,38 +2120,47 @@
             showError('发送失败：' + (err.message || '请检查网络'));
           });
       }
-
       function openModal() {
-        if (msgModal) {
-          msgModal.classList.add('show');
-          msgModal.setAttribute('aria-hidden', 'false');
-        }
+        if (msgModal) { msgModal.classList.add('show'); msgModal.setAttribute('aria-hidden', 'false'); }
       }
-
       function closeModal() {
-        if (msgModal) {
-          msgModal.classList.remove('show');
-          msgModal.setAttribute('aria-hidden', 'true');
-        }
+        if (msgModal) { msgModal.classList.remove('show'); msgModal.setAttribute('aria-hidden', 'true'); }
       }
-
-      function initFirestore() {
-        if (!window.firebase || !window.firebase.initializeApp) return;
-        var app;
-        try {
-          app = window.firebase.app();
-        } catch (e) {
-          app = window.firebase.initializeApp(firebaseConfig);
-        }
-        var db = app.firestore();
-        window.__msgWallDb = db;
-        var q = db.collection(COLLECTION_MESSAGES).orderBy('time', 'desc');
-        q.onSnapshot(
-          function (snapshot) { renderMessages(snapshot); },
-          function (err) { showError('加载失败：' + (err.message || '请检查网络或 Firestore 规则')); }
-        );
+      function toggleLike(docId, isLiked) {
+        if (!supabase || !docId) return;
+        var userId = getOrCreateUserId();
+        supabase.from(TABLE_MESSAGES).select('likes, liked_users').eq('id', docId).single()
+          .then(function (result) {
+            if (result.error) { showError('点赞失败：' + (result.error.message || '请检查网络')); return; }
+            var row = result.data;
+            var likes = typeof row.likes === 'number' ? row.likes : 0;
+            var likedUsers = Array.isArray(row.liked_users) ? row.liked_users.slice() : [];
+            if (isLiked) {
+              likes -= 1;
+              var idx = likedUsers.indexOf(userId);
+              if (idx !== -1) likedUsers.splice(idx, 1);
+            } else {
+              likes += 1;
+              if (likedUsers.indexOf(userId) === -1) likedUsers.push(userId);
+            }
+            return supabase.from(TABLE_MESSAGES).update({ likes: likes, liked_users: likedUsers }).eq('id', docId);
+          })
+          .then(function (updateResult) {
+            if (updateResult && updateResult.error) showError('点赞失败：' + (updateResult.error.message || ''));
+            else if (updateResult) fetchAndRender();
+          })
+          .catch(function (err) { showError('点赞失败：' + (err.message || '请检查网络')); });
       }
-
+      function initSupabase() {
+        if (typeof window.supabase === 'undefined' || !window.supabase.createClient) {
+          if (msgLoading) msgLoading.textContent = '请加载 Supabase SDK 后刷新';
+          setTimeout(function () { showError('未检测到 Supabase SDK'); }, 500);
+          return;
+        }
+        supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        fetchAndRender();
+        supabase.channel('msg-wall-messages').on('postgres_changes', { event: '*', schema: 'public', table: TABLE_MESSAGES }, function () { fetchAndRender(); }).subscribe();
+      }
       function bind() {
         msgModal = document.getElementById('msgModal');
         msgBackdrop = document.getElementById('msgModalBackdrop');
@@ -2197,47 +2179,20 @@
         if (msgCard) msgCard.addEventListener('click', function (e) { e.stopPropagation(); });
         msgSend.addEventListener('click', sendMessage);
         if (msgInput) msgInput.addEventListener('keydown', function (e) { if (e.key === 'Enter') sendMessage(); });
-        /* 点赞按钮：事件委托，updateDoc 更新 likes / likedUsers，onSnapshot 会自动刷新 UI */
         if (msgList) {
           msgList.addEventListener('click', function (e) {
             var btn = e.target.closest('.msg-like-btn');
             if (!btn) return;
             e.preventDefault();
-            var docId = btn.getAttribute('data-doc-id');
-            var isLiked = btn.getAttribute('data-liked') === 'true';
-            var db = window.__msgWallDb;
-            if (!db || !docId) return;
-            var ref = db.collection(COLLECTION_MESSAGES).doc(docId);
-            var FieldValue = window.firebase.firestore.FieldValue;
-            ref.update({
-              likes: FieldValue.increment(isLiked ? -1 : 1),
-              likedUsers: isLiked ? FieldValue.arrayRemove(getOrCreateUserId()) : FieldValue.arrayUnion(getOrCreateUserId()),
-            }).catch(function (err) {
-              showError('点赞失败：' + (err.message || '请检查网络'));
-            });
+            toggleLike(btn.getAttribute('data-doc-id'), btn.getAttribute('data-liked') === 'true');
           });
         }
         window.openMsgWallModal = openModal;
         window.closeMsgWallModal = closeModal;
       }
-
-      function boot() {
-        bind();
-        if (window.firebase && window.firebase.firestore) {
-          initFirestore();
-        } else {
-          if (msgLoading) msgLoading.textContent = '请配置 Firebase 后刷新';
-          setTimeout(function () {
-            showError('未检测到 Firebase，请确保已引入上方 Firebase 脚本并填写 firebaseConfig');
-          }, 500);
-        }
-      }
-
-      if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', boot);
-      } else {
-        boot();
-      }
+      function boot() { bind(); initSupabase(); }
+      if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
+      else boot();
     })();
   </script>
 
