@@ -2019,6 +2019,8 @@
       var SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNsbHd6aGpubmdqeHZjdWJncXpwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI0MjI4MjAsImV4cCI6MjA4Nzk5ODgyMH0.5ybei82C_VbcumDJW-Xft0LK3EE3H-Zutvl8NQuZUu4';
       var TABLE_MESSAGES = 'messages';
       var supabase = null;
+      var realtimeChannel = null;
+      var pollTimer = null;
       var msgModal, msgBackdrop, msgCard, msgClose;
       var msgListWrap, msgList, msgLoading, msgEmpty, msgError;
       var msgInput, msgSend;
@@ -2061,8 +2063,9 @@
         div.textContent = s;
         return div.innerHTML;
       }
-      function renderMessages(messages) {
-        setState('loading');
+      /** 静默刷新：为 true 时不显示「加载中」、不重置滚动，用于 realtime/点赞后刷新，减少卡顿与闪烁 */
+      function renderMessages(messages, silent) {
+        if (!silent) setState('loading');
         if (!messages || messages.length === 0) { setState('empty'); return; }
         var userId = getOrCreateUserId();
         var html = '';
@@ -2080,18 +2083,27 @@
         }
         msgList.innerHTML = html;
         setState('list');
-        msgListWrap.scrollTop = 0;
+        if (!silent) msgListWrap.scrollTop = 0;
       }
-      function fetchAndRender() {
+      /** 拉取列表并渲染；silent=true 时不显示加载态、不滚到顶部，用于实时/点赞后刷新 */
+      function fetchAndRender(silent) {
         if (!supabase) return;
-        setState('loading');
+        if (!silent) setState('loading');
         supabase.from(TABLE_MESSAGES).select('id, text, created_at, likes, liked_users').order('created_at', { ascending: false })
           .then(function (result) {
             if (result.error) { showError('加载失败：' + (result.error.message || '请检查网络或 Supabase 策略')); return; }
-            renderMessages(result.data || []);
+            renderMessages(result.data || [], silent);
           })
           .catch(function (err) { showError('加载失败：' + (err.message || '请检查网络')); });
       }
+      /** 防抖：避免 realtime 短时间多次触发导致卡顿 */
+      var fetchAndRenderDebounced = (function () {
+        var timer = null;
+        return function () {
+          if (timer) clearTimeout(timer);
+          timer = setTimeout(function () { fetchAndRender(true); timer = null; }, 350);
+        };
+      })();
       function sendMessage() {
         var text = (msgInput.value || '').trim();
         if (!text) {
@@ -2112,7 +2124,7 @@
             msgSend.disabled = false;
             msgSend.textContent = '发送';
             if (result.error) showError('发送失败：' + (result.error.message || '请检查网络'));
-            else fetchAndRender();
+            else fetchAndRender(true);
           })
           .catch(function (err) {
             msgSend.disabled = false;
@@ -2147,7 +2159,7 @@
           })
           .then(function (updateResult) {
             if (updateResult && updateResult.error) showError('点赞失败：' + (updateResult.error.message || ''));
-            else if (updateResult) fetchAndRender();
+            else if (updateResult) fetchAndRender(true);
           })
           .catch(function (err) { showError('点赞失败：' + (err.message || '请检查网络')); });
       }
@@ -2158,8 +2170,16 @@
           return;
         }
         supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-        fetchAndRender();
-        supabase.channel('msg-wall-messages').on('postgres_changes', { event: '*', schema: 'public', table: TABLE_MESSAGES }, function () { fetchAndRender(); }).subscribe();
+        fetchAndRender(false);
+        realtimeChannel = supabase
+          .channel('msg-wall-messages')
+          .on('postgres_changes', { event: '*', schema: 'public', table: TABLE_MESSAGES }, fetchAndRenderDebounced)
+          .subscribe(function (status) {
+            if (status === 'CHANNEL_ERROR') console.warn('[留言墙] Realtime 订阅异常，将依赖轮询更新');
+          });
+        pollTimer = setInterval(function () {
+          if (msgModal && msgModal.classList.contains('show')) fetchAndRender(true);
+        }, 8000);
       }
       function bind() {
         msgModal = document.getElementById('msgModal');
