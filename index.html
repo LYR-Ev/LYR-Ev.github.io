@@ -809,8 +809,47 @@
       color: var(--text-soft);
       margin-top: 0.35rem;
     }
-
-    /* 加载 / 错误 / 空状态 */
+    /* 点赞行：每条留言右下角 */
+    .msg-bubble-footer {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 0.35rem;
+      margin-top: 0.5rem;
+      padding-top: 0.35rem;
+      border-top: 1px solid rgba(0, 0, 0, 0.05);
+    }
+    .msg-like-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      padding: 0.25rem 0.5rem;
+      border: none;
+      border-radius: 8px;
+      background: rgba(0, 0, 0, 0.06);
+      color: var(--text-soft);
+      font-size: 0.8rem;
+      font-family: inherit;
+      cursor: pointer;
+      transition: transform 0.2s ease, background 0.2s ease, color 0.2s ease;
+    }
+    .msg-like-btn:hover {
+      background: rgba(232, 180, 184, 0.25);
+      color: var(--accent-deep);
+      transform: scale(1.08);
+    }
+    .msg-like-btn.liked {
+      background: rgba(232, 180, 184, 0.35);
+      color: var(--accent-deep);
+    }
+    .msg-like-btn.liked:hover {
+      background: rgba(232, 180, 184, 0.5);
+      transform: scale(1.05);
+    }
+    .msg-like-count {
+      font-size: 0.8rem;
+      color: var(--text-soft);
+    }
     .msg-loading,
     .msg-error,
     .msg-empty {
@@ -1991,6 +2030,20 @@
       var msgListWrap, msgList, msgLoading, msgEmpty, msgError;
       var msgInput, msgSend;
 
+      /** 获取或生成当前用户唯一 id（localStorage），用于点赞防重复 */
+      function getOrCreateUserId() {
+        var key = 'msg_wall_user_id';
+        try {
+          var id = localStorage.getItem(key);
+          if (id) return id;
+          id = 'u_' + Date.now() + '_' + Math.random().toString(36).slice(2, 11);
+          localStorage.setItem(key, id);
+          return id;
+        } catch (e) {
+          return 'u_' + Date.now() + '_' + Math.random().toString(36).slice(2, 11);
+        }
+      }
+
       function setState(which) {
         if (msgLoading) msgLoading.hidden = which !== 'loading';
         if (msgList) msgList.hidden = which !== 'list';
@@ -2023,23 +2076,32 @@
         return div.innerHTML;
       }
 
+      /** 渲染留言列表（含点赞按钮与数量；按 time 倒序；onSnapshot 触发时自动刷新） */
       function renderMessages(snapshot) {
         setState('loading');
         if (!snapshot || !snapshot.docs || snapshot.docs.length === 0) {
           setState('empty');
           return;
         }
+        var userId = getOrCreateUserId();
         var html = '';
         snapshot.docs.forEach(function (doc) {
           var data = doc.data();
           var text = (data.text || '').trim();
           if (!text) return;
           var timeStr = formatTime(data.time);
+          var likes = typeof data.likes === 'number' ? data.likes : 0;
+          var likedUsers = Array.isArray(data.likedUsers) ? data.likedUsers : [];
+          var isLiked = likedUsers.indexOf(userId) !== -1;
+          var btnClass = 'msg-like-btn' + (isLiked ? ' liked' : '');
+          var docId = escapeHtml(doc.id);
           html +=
-            '<li class="msg-bubble">' +
+            '<li class="msg-bubble" data-doc-id="' + docId + '">' +
             '<div class="msg-bubble-text">' + escapeHtml(text) + '</div>' +
             '<div class="msg-bubble-time">' + escapeHtml(timeStr) + '</div>' +
-            '</li>';
+            '<div class="msg-bubble-footer">' +
+            '<button type="button" class="' + btnClass + '" data-doc-id="' + docId + '" data-liked="' + (isLiked ? 'true' : 'false') + '" aria-label="点赞">👍 <span class="msg-like-count">' + likes + '</span></button>' +
+            '</div></li>';
         });
         msgList.innerHTML = html;
         setState('list');
@@ -2071,6 +2133,8 @@
           .add({
             text: text,
             time: window.firebase.firestore.FieldValue.serverTimestamp(),
+            likes: 0,
+            likedUsers: [],
           })
           .then(function () {
             msgInput.value = '';
@@ -2133,6 +2197,26 @@
         if (msgCard) msgCard.addEventListener('click', function (e) { e.stopPropagation(); });
         msgSend.addEventListener('click', sendMessage);
         if (msgInput) msgInput.addEventListener('keydown', function (e) { if (e.key === 'Enter') sendMessage(); });
+        /* 点赞按钮：事件委托，updateDoc 更新 likes / likedUsers，onSnapshot 会自动刷新 UI */
+        if (msgList) {
+          msgList.addEventListener('click', function (e) {
+            var btn = e.target.closest('.msg-like-btn');
+            if (!btn) return;
+            e.preventDefault();
+            var docId = btn.getAttribute('data-doc-id');
+            var isLiked = btn.getAttribute('data-liked') === 'true';
+            var db = window.__msgWallDb;
+            if (!db || !docId) return;
+            var ref = db.collection(COLLECTION_MESSAGES).doc(docId);
+            var FieldValue = window.firebase.firestore.FieldValue;
+            ref.update({
+              likes: FieldValue.increment(isLiked ? -1 : 1),
+              likedUsers: isLiked ? FieldValue.arrayRemove(getOrCreateUserId()) : FieldValue.arrayUnion(getOrCreateUserId()),
+            }).catch(function (err) {
+              showError('点赞失败：' + (err.message || '请检查网络'));
+            });
+          });
+        }
         window.openMsgWallModal = openModal;
         window.closeMsgWallModal = closeModal;
       }
