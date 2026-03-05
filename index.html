@@ -1154,6 +1154,54 @@
     .weather-search-row .weather-select {
       flex: 1;
     }
+    .weather-input-wrap {
+      position: relative;
+      flex: 1;
+      min-width: 0;
+    }
+    .weather-input-wrap .weather-select {
+      width: 100%;
+    }
+    .weather-city-suggest {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 100%;
+      margin-top: 4px;
+      background: #fff;
+      border: 1px solid #cbd5e1;
+      border-radius: 12px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+      z-index: 20;
+      max-height: 200px;
+      overflow-y: auto;
+      display: none;
+      padding: 0.25rem 0;
+    }
+    .weather-city-suggest.show {
+      display: block;
+    }
+    .weather-city-suggest[hidden] {
+      display: none !important;
+    }
+    .weather-city-suggest-option {
+      display: block;
+      width: 100%;
+      padding: 0.5rem 1rem;
+      font-size: 0.95rem;
+      font-family: inherit;
+      color: var(--text);
+      background: none;
+      border: none;
+      cursor: pointer;
+      text-align: left;
+      transition: background 0.15s;
+    }
+    .weather-city-suggest-option:hover,
+    .weather-city-suggest-option:focus {
+      background: rgba(100, 120, 180, 0.12);
+      outline: none;
+    }
     .weather-search-row input.weather-select {
       background-image: none;
       padding-right: 1rem;
@@ -1889,10 +1937,10 @@
         </div>
         <div class="weather-popup-body">
           <div class="weather-search-row">
-            <input type="text" class="weather-select" id="weatherCityInput" list="weatherCitiesList" placeholder="输入城市名（支持中英文）" autocomplete="off" aria-describedby="weatherResult">
-            <datalist id="weatherCitiesList">
-              <option value="北京"><option value="上海"><option value="广州"><option value="深圳"><option value="杭州"><option value="成都"><option value="武汉"><option value="西安"><option value="南京"><option value="苏州"><option value="London"><option value="New York"><option value="Tokyo"><option value="Paris">
-            </datalist>
+            <div class="weather-input-wrap">
+              <input type="text" class="weather-select" id="weatherCityInput" placeholder="输入城市名（支持中英文）" autocomplete="off" aria-describedby="weatherResult" aria-autocomplete="list" aria-controls="weatherCitySuggest" aria-expanded="false" role="combobox">
+              <div class="weather-city-suggest" id="weatherCitySuggest" role="listbox" hidden aria-hidden="true"></div>
+            </div>
             <button type="button" class="weather-query-btn" id="weatherQueryBtn">查询</button>
             <button type="button" class="weather-geo-btn" id="weatherGeoBtn" title="定位">📍 定位</button>
           </div>
@@ -2722,6 +2770,8 @@
           this.chartTitleEl = document.getElementById('weatherChartTitle');
           this.chartTooltipEl = document.getElementById('weatherChartTooltip');
           this.lastUpdatedEl = document.getElementById('weatherLastUpdated');
+          this.suggestEl = document.getElementById('weatherCitySuggest');
+          this.CITY_SUGGEST_LIST = ['北京', '上海', '广州', '深圳', '杭州', '成都', '武汉', '西安', '南京', '苏州', 'London', 'New York', 'Tokyo', 'Paris'];
           this.cache = {};
           this.controller = null;
           this._chartAnimation = null;
@@ -2753,10 +2803,67 @@
           this.card.addEventListener('click', function (e) { e.stopPropagation(); });
           this.queryBtn.addEventListener('click', function () { self._fetchByCity(self.cityInput.value.trim()); });
           this.cityInput.addEventListener('change', function () { self._fetchByCity(self.cityInput.value.trim()); });
+          this.cityInput.addEventListener('focus', function () { self._showCitySuggest(self.cityInput.value.trim()); });
+          this.cityInput.addEventListener('input', function () { self._showCitySuggest(self.cityInput.value.trim()); });
+          this.cityInput.addEventListener('blur', function () {
+            self._suggestHideTimer = setTimeout(function () { self._hideCitySuggest(); }, 150);
+          });
           this.cityInput.addEventListener('keydown', function (e) {
             if (e.key === 'Enter') self._fetchByCity(self.cityInput.value.trim());
           });
+          if (this.suggestEl) {
+            this.suggestEl.addEventListener('mousedown', function (e) {
+              var opt = e.target.closest('.weather-city-suggest-option');
+              if (opt && opt.dataset.city !== undefined) {
+                e.preventDefault();
+                self.cityInput.value = opt.dataset.city;
+                self._hideCitySuggest();
+                self._fetchByCity(opt.dataset.city);
+              }
+            });
+          }
           this.geoBtn.addEventListener('click', function () { self._fetchByGeo(); });
+        };
+
+        WeatherWidget.prototype._showCitySuggest = function (filter) {
+          if (!this.suggestEl) return;
+          if (this._suggestHideTimer) {
+            clearTimeout(this._suggestHideTimer);
+            this._suggestHideTimer = null;
+          }
+          var list = this.CITY_SUGGEST_LIST;
+          var q = (filter || '').toLowerCase();
+          var filtered = q ? list.filter(function (c) { return c.toLowerCase().indexOf(q) >= 0; }) : list;
+          this.suggestEl.innerHTML = '';
+          filtered.forEach(function (city) {
+            var btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'weather-city-suggest-option';
+            btn.dataset.city = city;
+            btn.textContent = city;
+            btn.setAttribute('role', 'option');
+            this.suggestEl.appendChild(btn);
+          }, this);
+          if (filtered.length === 0) {
+            this._hideCitySuggest();
+            return;
+          }
+          this.suggestEl.removeAttribute('hidden');
+          this.suggestEl.setAttribute('aria-hidden', 'false');
+          this.suggestEl.classList.add('show');
+          this.cityInput.setAttribute('aria-expanded', 'true');
+        };
+
+        WeatherWidget.prototype._hideCitySuggest = function () {
+          if (this._suggestHideTimer) {
+            clearTimeout(this._suggestHideTimer);
+            this._suggestHideTimer = null;
+          }
+          if (!this.suggestEl) return;
+          this.suggestEl.setAttribute('hidden', '');
+          this.suggestEl.setAttribute('aria-hidden', 'true');
+          this.suggestEl.classList.remove('show');
+          this.cityInput.setAttribute('aria-expanded', 'false');
         };
 
         WeatherWidget.prototype._applyTriggerPosition = function () {
@@ -2925,6 +3032,7 @@
         };
 
         WeatherWidget.prototype.close = function () {
+          this._hideCitySuggest();
           this.popup.classList.remove('show');
           this.popup.setAttribute('aria-hidden', 'true');
         };
