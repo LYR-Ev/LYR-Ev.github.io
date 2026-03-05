@@ -2834,6 +2834,8 @@
           var list = this.CITY_SUGGEST_LIST;
           var q = (filter || '').toLowerCase();
           var filtered = q ? list.filter(function (c) { return c.toLowerCase().indexOf(q) >= 0; }) : list;
+          // 与输入框完全一致时不显示该项，避免输入「武汉」后仍提示「武汉」
+          filtered = filtered.filter(function (c) { return c !== filter; });
           this.suggestEl.innerHTML = '';
           filtered.forEach(function (city) {
             var btn = document.createElement('button');
