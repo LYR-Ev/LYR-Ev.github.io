@@ -4,6 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>小屋探索</title>
+  <script>
+    (function(){ if (window.location.hash === '#room') document.documentElement.classList.add('hash-room'); })();
+  </script>
   <!-- 本地字体：font 文件夹 -->
   <style>
     @font-face {
@@ -293,6 +296,18 @@
       visibility: hidden;
       pointer-events: none;
       transition: opacity 0.9s ease, visibility 0.9s ease;
+    }
+
+    /* 首屏即按 hash 显示正确视图，避免 bg2 刷新时先闪 bg 再切到 bg2 */
+    html.hash-room .intro {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+    html.hash-room .room-view.hidden {
+      opacity: 1;
+      visibility: visible;
+      pointer-events: auto;
     }
 
     /* 门口可点击区域：位置与大小由 :root 的 --door-* 控制，勿改下面 fallback */
@@ -1586,6 +1601,41 @@
       z-index: 110;
     }
 
+    /* 网页刷新按钮：固定右上角，刷新后保持当前视图（bg/bg2） */
+    .refresh-fixed {
+      position: fixed;
+      top: 1rem;
+      right: 5.5rem;
+      z-index: 109;
+    }
+    .btn-refresh {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 48px;
+      height: 48px;
+      padding: 0;
+      border: 2px solid rgba(0, 0, 0, 0.08);
+      border-radius: 50%;
+      background: #fff;
+      color: #5a5550;
+      cursor: pointer;
+      transition: background 0.25s ease, border-color 0.25s ease, transform 0.15s ease;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+    }
+    .btn-refresh:hover {
+      background: #f8f8f8;
+      border-color: rgba(0, 0, 0, 0.12);
+      transform: scale(1.05);
+    }
+    .btn-refresh:active {
+      transform: scale(0.98);
+    }
+    .btn-refresh svg {
+      width: 1.35rem;
+      height: 1.35rem;
+    }
+
     .btn-music {
       display: inline-flex;
       align-items: center;
@@ -1819,6 +1869,14 @@
     <div class="logo-popup" id="logoPopup">嘻嘻，我在</div>
   </div>
 
+  <div class="refresh-fixed">
+    <button type="button" class="btn-refresh" id="btnRefresh" title="刷新页面" aria-label="刷新页面">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M23 4v6h-6M1 20v-6h6"/>
+        <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+      </svg>
+    </button>
+  </div>
   <div class="music-fixed">
     <button type="button" class="btn-music" id="btnMusic" title="打开或关闭背景音乐">
       <span class="btn-music-icon" aria-hidden="true">🎵</span>
@@ -2316,6 +2374,12 @@
       var roomPan = document.getElementById('roomPan');
       var roomPanContent = document.getElementById('roomPanContent');
 
+      // 根据 URL hash 恢复视图（刷新后停留在当前页：bg 或 bg2）
+      if (window.location.hash === '#room') {
+        intro.classList.add('blurring', 'hidden');
+        roomView.classList.remove('hidden');
+      }
+
       /**
        * 按 cover 规则计算内容尺寸，使整图可被拖拽浏览；拖拽范围限制在内容与视口内，不露空白。
        * handleEl = 仅在此层按下时开始拖拽（门口/信封在上一层，点它们不会触发拖拽）；panEl 用于 capture 和 dragging 样式
@@ -2524,6 +2588,7 @@
         closeDoorPwdPopup();
         intro.classList.add('blurring', 'hidden');
         roomView.classList.remove('hidden');
+        window.location.hash = 'room';
         setTimeout(function () { window.dispatchEvent(new Event('resize')); }, 80);
       }
 
@@ -2637,6 +2702,7 @@
         document.body.classList.remove('bg2-blur');
         mainPage.classList.remove('visible');
         roomView.classList.remove('hidden');
+        window.location.hash = 'room';
         document.querySelectorAll('.letter-line').forEach(function (line) {
           line.classList.remove('visible');
         });
@@ -2650,9 +2716,21 @@
       // 房间内「转到室外」：回到初始界面（bg.jpg + 探索小屋）
       var btnOutdoor = document.getElementById('btnOutdoor');
       btnOutdoor.addEventListener('click', function () {
+        document.documentElement.classList.remove('hash-room');
         intro.classList.remove('blurring', 'hidden');
         roomView.classList.add('hidden');
+        window.location.hash = '';
       });
+
+      // 网页刷新按钮：刷新后保持当前视图（bg 或 bg2；信件页刷新后回到 bg2）
+      var btnRefresh = document.getElementById('btnRefresh');
+      if (btnRefresh) {
+        btnRefresh.addEventListener('click', function () {
+          var view = mainPage.classList.contains('visible') ? 'room' : (roomView.classList.contains('hidden') ? 'intro' : 'room');
+          window.location.hash = view === 'intro' ? '' : view;
+          window.location.reload();
+        });
+      }
 
       /*
        * 天气模块：Class 封装 + 缓存 TTL + 防抖 + 定位缓存 + 请求超时 + 完整天气码
