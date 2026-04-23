@@ -36,13 +36,24 @@
       保存后若未变化请强制刷新（Ctrl+F5 或 Cmd+Shift+R）。百分比相对于背景图容器。
     */
     :root {
-      --card: #fffefc;
-      --accent: #e8b4b8;
-      --accent-deep: #d4a0a5;
-      --text: #4a4541;
-      --text-soft: #7a756f;
-      --shadow: rgba(80, 60, 90, 0.2);
-      --radius: 20px;
+      /* ===== 水墨宣纸主题（方案 A） ===== */
+      --ink: #2a1f18;            /* 墨黑：正文/标题 */
+      --ink-soft: #6b5548;       /* 沉香：次要文字 */
+      --rice: #f3e5c2;           /* 米宣纸：卡片主底 */
+      --rice-warm: #ead6a3;      /* 陈年宣纸：卡片深纹 */
+      --rice-edge: #c9a86a;      /* 宣纸边晕 */
+      --cinnabar: #b8352c;       /* 朱砂：印章/强调 */
+      --cinnabar-deep: #8b261c;  /* 深朱砂：悬停 */
+      --ink-line: rgba(42, 31, 24, 0.6);  /* 墨线描边 */
+      --paper-shadow: 0 4px 14px rgba(80, 50, 20, 0.22), 0 20px 44px rgba(40, 25, 10, 0.28);
+      /* ===== 兼容旧变量（映射到水墨系） ===== */
+      --card: var(--rice);
+      --accent: var(--cinnabar);
+      --accent-deep: var(--cinnabar-deep);
+      --text: var(--ink);
+      --text-soft: var(--ink-soft);
+      --shadow: rgba(80, 50, 20, 0.22);
+      --radius: 10px;
       /* 信封虚线框：top/left 位置，width/height 大小（% 或 px） */
       --env-top: 85%;
       --env-left: 33%;
@@ -93,6 +104,396 @@
     html {
       font-size: clamp(14px, 2.2vw, 18px);
       -webkit-tap-highlight-color: transparent;
+    }
+
+    /* 全局宣纸纤维颗粒叠加层（覆盖所有内容包括弹窗，营造整体宣纸质感） */
+    html::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      pointer-events: none;
+      background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.95' numOctaves='2' seed='4' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.25   0 0 0 0 0.18   0 0 0 0 0.1   0 0 0 0.9 0'/></filter><rect width='100%' height='100%' filter='url(%23n)' opacity='0.55'/></svg>");
+      background-size: 180px 180px;
+      opacity: 0.18;
+      mix-blend-mode: soft-light;
+    }
+
+    /* 水墨宣纸通用卡片样式：弹窗卡片统一套这个视觉层 */
+    .msg-card,
+    .weather-popup-card,
+    .door-pwd-card,
+    .note-popup-card,
+    .room-photo-card {
+      background:
+        radial-gradient(ellipse at 15% 10%, rgba(255, 248, 220, 0.7), transparent 55%),
+        radial-gradient(ellipse at 88% 92%, rgba(140, 90, 40, 0.18), transparent 60%),
+        linear-gradient(160deg, #f6ebcd 0%, #f1e2b8 42%, #e4cf93 100%) !important;
+      border: 1px solid rgba(80, 50, 20, 0.28) !important;
+      box-shadow:
+        inset 0 0 0 1px rgba(255, 250, 230, 0.5),
+        inset 0 0 30px rgba(140, 90, 40, 0.12),
+        var(--paper-shadow) !important;
+      color: var(--ink);
+      position: relative;
+    }
+    /* 卡片四周淡淡的墨色晕染 */
+    .msg-card::before,
+    .weather-popup-card::before,
+    .door-pwd-card::before,
+    .note-popup-card::before,
+    .room-photo-card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      pointer-events: none;
+      background:
+        radial-gradient(ellipse at 50% 0%, rgba(60, 40, 20, 0.08), transparent 40%),
+        radial-gradient(ellipse at 50% 100%, rgba(60, 40, 20, 0.06), transparent 45%);
+      z-index: 0;
+    }
+    /* 卡片纸纹:更细的横向纤维 */
+    .msg-card::after,
+    .weather-popup-card::after,
+    .door-pwd-card::after,
+    .note-popup-card::after,
+    .room-photo-card::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      pointer-events: none;
+      background-image:
+        repeating-linear-gradient(0deg, rgba(120, 80, 40, 0.035) 0 1px, transparent 1px 3px),
+        repeating-linear-gradient(90deg, rgba(120, 80, 40, 0.025) 0 1px, transparent 1px 5px);
+      mix-blend-mode: multiply;
+      z-index: 0;
+    }
+    /* 卡片内部元素抬到纸纹之上 */
+    .msg-card > *,
+    .weather-popup-card > *,
+    .door-pwd-card > *,
+    .note-popup-card > *,
+    .room-photo-card > * {
+      position: relative;
+      z-index: 1;
+    }
+
+    /* 右下角朱砂小印：统一给主要弹窗添加 */
+    .msg-card .ink-seal,
+    .weather-popup-card .ink-seal,
+    .door-pwd-card .ink-seal {
+      position: absolute;
+      right: 14px;
+      bottom: 12px;
+      width: clamp(22px, 2.8vw, 32px);
+      height: clamp(22px, 2.8vw, 32px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Ma Shan Zheng', serif;
+      font-size: clamp(0.6rem, 1.1vw, 0.92rem);
+      color: #fff2e6;
+      background:
+        radial-gradient(circle at 30% 28%, rgba(210, 70, 55, 0.95), rgba(150, 30, 25, 0.96) 65%, rgba(100, 15, 15, 0.92) 100%);
+      border-radius: 4px;
+      box-shadow:
+        inset 0 0 0 1px rgba(255, 255, 255, 0.2),
+        inset 0 0 6px rgba(80, 0, 0, 0.5),
+        0 1px 2px rgba(0, 0, 0, 0.3);
+      transform: rotate(6deg);
+      opacity: 0.88;
+      z-index: 2;
+      pointer-events: none;
+      user-select: none;
+    }
+
+    /* 水墨细线按钮统一风格 */
+    .btn-outdoor,
+    .msg-send,
+    .weather-query-btn,
+    .weather-geo-btn {
+      background: linear-gradient(180deg, rgba(255, 248, 225, 0.55), rgba(230, 210, 165, 0.45)) !important;
+      color: var(--ink) !important;
+      border: 1px solid var(--ink-line) !important;
+      border-radius: 4px !important;
+      font-family: 'Ma Shan Zheng', 'Zhi Mang Xing', cursive !important;
+      letter-spacing: 0.12em;
+      box-shadow:
+        inset 0 0 0 1px rgba(255, 248, 225, 0.4),
+        0 1px 2px rgba(80, 50, 20, 0.18) !important;
+      transition: background 0.3s ease, color 0.3s ease, transform 0.18s ease, box-shadow 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+    .btn-outdoor::before,
+    .msg-send:not(:disabled)::before,
+    .weather-query-btn::before,
+    .weather-geo-btn::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at center, rgba(184, 53, 44, 0.22), transparent 65%);
+      opacity: 0;
+      transition: opacity 0.35s ease;
+      pointer-events: none;
+    }
+    .btn-outdoor:hover,
+    .msg-send:hover:not(:disabled),
+    .weather-query-btn:hover,
+    .weather-geo-btn:hover {
+      background: linear-gradient(180deg, #fff4d4, #e6c67a) !important;
+      color: var(--cinnabar-deep) !important;
+      border-color: var(--cinnabar) !important;
+      box-shadow:
+        inset 0 0 0 1px rgba(255, 248, 225, 0.6),
+        0 2px 6px rgba(184, 53, 44, 0.25),
+        0 6px 16px rgba(80, 50, 20, 0.22) !important;
+      transform: translateY(-1px);
+    }
+    .btn-outdoor:hover::before,
+    .msg-send:hover:not(:disabled)::before,
+    .weather-query-btn:hover::before,
+    .weather-geo-btn:hover::before { opacity: 1; }
+    .btn-outdoor:active,
+    .msg-send:active:not(:disabled),
+    .weather-query-btn:active,
+    .weather-geo-btn:active { transform: translateY(0); }
+
+    /* 输入框墨线描边 */
+    .msg-input,
+    .weather-select,
+    .door-pwd-inputs input {
+      background: rgba(255, 250, 230, 0.72) !important;
+      border: 1px solid var(--ink-line) !important;
+      color: var(--ink) !important;
+      font-family: 'Ma Shan Zheng', 'Zhi Mang Xing', cursive !important;
+      border-radius: 4px !important;
+      transition: border-color 0.25s ease, box-shadow 0.25s ease, background 0.25s ease;
+    }
+    .msg-input:focus,
+    .weather-select:focus,
+    .door-pwd-inputs input:focus {
+      border-color: var(--cinnabar) !important;
+      background: #fff9e4 !important;
+      box-shadow: 0 0 0 3px rgba(184, 53, 44, 0.15), 0 2px 6px rgba(80, 50, 20, 0.18) !important;
+      outline: none !important;
+    }
+
+    /* 天气弹窗 header 宣纸化:覆盖彩色主题,统一墨调 */
+    .weather-popup-header {
+      background: linear-gradient(135deg, rgba(42, 31, 24, 0.92) 0%, rgba(90, 60, 30, 0.88) 100%) !important;
+      color: #f6ebcd !important;
+      border-bottom: 1px solid rgba(201, 168, 106, 0.35) !important;
+      position: relative;
+    }
+    .weather-popup-header::after {
+      content: '';
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: -1px;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, rgba(201, 168, 106, 0.55) 30%, rgba(201, 168, 106, 0.55) 70%, transparent);
+    }
+    .weather-popup-title {
+      font-family: 'Ma Shan Zheng', 'Zhi Mang Xing', cursive !important;
+      font-size: 1.2rem !important;
+      letter-spacing: 0.15em !important;
+      font-weight: normal !important;
+    }
+    .weather-popup-close {
+      background: rgba(246, 235, 205, 0.18) !important;
+      border: 1px solid rgba(246, 235, 205, 0.35) !important;
+      color: rgba(246, 235, 205, 0.95) !important;
+    }
+    .weather-popup-close:hover {
+      background: rgba(184, 53, 44, 0.7) !important;
+      border-color: rgba(255, 248, 225, 0.7) !important;
+      color: #fff !important;
+      transform: rotate(90deg) scale(1.05) !important;
+    }
+    /* 天气主题色仅作为细线在 header 底部装饰,不再大面积填充 */
+    .weather-popup-card.weather-theme-sunny .weather-popup-header::after { background: linear-gradient(90deg, transparent, rgba(245, 158, 11, 0.7), transparent); }
+    .weather-popup-card.weather-theme-rain  .weather-popup-header::after { background: linear-gradient(90deg, transparent, rgba(59, 130, 246, 0.7), transparent); }
+    .weather-popup-card.weather-theme-snow  .weather-popup-header::after { background: linear-gradient(90deg, transparent, rgba(148, 163, 184, 0.7), transparent); }
+    .weather-popup-card.weather-theme-night .weather-popup-header::after { background: linear-gradient(90deg, transparent, rgba(148, 163, 224, 0.7), transparent); }
+
+    /* 密码弹窗标题:水墨大字 */
+    .door-pwd-card .door-pwd-title {
+      font-family: 'Ma Shan Zheng', 'Zhi Mang Xing', cursive !important;
+      font-size: 1.3rem !important;
+      letter-spacing: 0.18em !important;
+      color: var(--ink) !important;
+    }
+    .door-pwd-err {
+      color: var(--cinnabar) !important;
+      font-family: 'Ma Shan Zheng', cursive !important;
+      letter-spacing: 0.15em !important;
+    }
+
+    /* 纸条弹窗卡片:倾斜手札感,带墨线边 */
+    .note-popup-card {
+      font-family: 'Ma Shan Zheng', 'Zhi Mang Xing', cursive !important;
+      color: var(--ink) !important;
+      letter-spacing: 0.05em !important;
+      transform: rotate(-1.2deg);
+      transition: transform 0.4s cubic-bezier(.2,.8,.2,1.1) !important;
+    }
+    .note-popup-card:hover { transform: rotate(0deg); }
+
+    /* 照片弹窗:相纸样式 */
+    .room-photo-card .room-photo-caption {
+      font-family: 'Ma Shan Zheng', 'Zhi Mang Xing', cursive !important;
+      color: var(--ink) !important;
+      letter-spacing: 0.08em !important;
+    }
+
+    /* 墨滴加载动画：圆点如墨滴入水晕开 */
+    .msg-loading,
+    .weather-loading {
+      display: flex !important;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+    /* 关键：必须比上面更具体/同时带 !important，否则 hidden 属性会被 display:flex 覆盖，
+       导致 JS 设置 hidden 后元素仍然可见（留言墙永远在转、天气永远显示"正在获取"） */
+    .msg-loading[hidden],
+    .weather-loading[hidden] {
+      display: none !important;
+    }
+    .msg-loading::before,
+    .weather-loading::before {
+      content: '';
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: radial-gradient(circle at center, #2a1f18 0%, #2a1f18 35%, rgba(42, 31, 24, 0) 72%);
+      animation: inkDropBreath 1.4s ease-in-out infinite;
+      flex-shrink: 0;
+    }
+    @keyframes inkDropBreath {
+      0%, 100% { transform: scale(0.7); opacity: 0.55; }
+      50%      { transform: scale(1.25); opacity: 1; }
+    }
+
+    /* ===== 大屏自适应：三个主弹窗按视口比例放大，字号同步流体放大 =====
+       小屏(<600px)：尺寸近似原状；中屏(1024px)：适度放大；
+       大屏(1440px+)：明显放大；4K(2560px+)：上限收住，避免过宽影响阅读 */
+    .msg-card {
+      max-width: clamp(360px, 40vw, 720px) !important;
+      max-height: min(86vh, 780px) !important;
+    }
+    .msg-list-wrap {
+      min-height: clamp(220px, 28vh, 320px) !important;
+      max-height: clamp(280px, 56vh, 560px) !important;
+      padding: clamp(0.85rem, 1vw, 1.4rem) !important;
+    }
+    .msg-header {
+      padding: clamp(0.9rem, 1vw, 1.4rem) clamp(1.1rem, 1.3vw, 1.8rem) !important;
+    }
+    .msg-header::after {
+      left: clamp(1.1rem, 1.3vw, 1.8rem) !important;
+      right: clamp(1.1rem, 1.3vw, 1.8rem) !important;
+    }
+    .msg-title {
+      font-size: clamp(1.25rem, 1.7vw, 1.85rem) !important;
+    }
+    .msg-close {
+      width: clamp(32px, 2.4vw, 44px) !important;
+      height: clamp(32px, 2.4vw, 44px) !important;
+      font-size: clamp(1.4rem, 1.6vw, 1.9rem) !important;
+    }
+    .msg-input-row {
+      padding: clamp(0.85rem, 1vw, 1.4rem) clamp(1.1rem, 1.3vw, 1.8rem) !important;
+      gap: clamp(0.6rem, 0.8vw, 1rem) !important;
+    }
+    .msg-input-row::before {
+      left: clamp(1.1rem, 1.3vw, 1.8rem) !important;
+      right: clamp(1.1rem, 1.3vw, 1.8rem) !important;
+    }
+    .msg-input {
+      font-size: clamp(0.95rem, 1vw, 1.15rem) !important;
+      padding: clamp(0.6rem, 0.75vw, 0.9rem) clamp(0.95rem, 1.1vw, 1.4rem) !important;
+    }
+    .msg-send {
+      font-size: clamp(0.95rem, 1vw, 1.15rem) !important;
+      padding: clamp(0.6rem, 0.75vw, 0.9rem) clamp(1.2rem, 1.5vw, 1.9rem) !important;
+    }
+    .msg-bubble {
+      padding: clamp(0.7rem, 0.85vw, 1.1rem) clamp(1rem, 1.2vw, 1.5rem) clamp(0.85rem, 1vw, 1.2rem) !important;
+      margin-bottom: clamp(0.85rem, 1vw, 1.2rem) !important;
+    }
+    .msg-bubble-text {
+      font-size: clamp(0.95rem, 1vw, 1.15rem) !important;
+      line-height: 1.6 !important;
+    }
+    .msg-bubble-time {
+      font-size: clamp(0.75rem, 0.85vw, 0.95rem) !important;
+    }
+
+    .weather-popup-card {
+      max-width: clamp(340px, 34vw, 640px) !important;
+      max-height: min(88vh, 800px);
+    }
+    .weather-popup-header {
+      padding: clamp(0.9rem, 1vw, 1.35rem) clamp(1.1rem, 1.3vw, 1.7rem) !important;
+    }
+    .weather-popup-title {
+      font-size: clamp(1.15rem, 1.45vw, 1.6rem) !important;
+    }
+    .weather-popup-close {
+      width: clamp(32px, 2.4vw, 44px) !important;
+      height: clamp(32px, 2.4vw, 44px) !important;
+      font-size: clamp(1.4rem, 1.6vw, 1.9rem) !important;
+    }
+    .weather-popup-body {
+      padding: clamp(1.1rem, 1.3vw, 1.75rem) clamp(1.3rem, 1.5vw, 2rem) !important;
+    }
+    .weather-select {
+      font-size: clamp(0.92rem, 1vw, 1.1rem) !important;
+      padding: clamp(0.55rem, 0.7vw, 0.85rem) clamp(0.95rem, 1.1vw, 1.4rem) !important;
+      padding-right: clamp(2.25rem, 2.5vw, 2.8rem) !important;
+    }
+    .weather-query-btn,
+    .weather-geo-btn {
+      font-size: clamp(0.92rem, 1vw, 1.1rem) !important;
+      padding: clamp(0.55rem, 0.7vw, 0.85rem) clamp(1rem, 1.2vw, 1.5rem) !important;
+    }
+
+    /* 信件页（信封展开后的卡片容器）*/
+    .page {
+      max-width: clamp(480px, 48vw, 900px) !important;
+    }
+    .card {
+      padding: clamp(2rem, 3.2vw, 3.5rem) clamp(1.75rem, 3vw, 3.25rem) !important;
+    }
+    .title {
+      font-size: clamp(1.5rem, 2.4vw, 2.4rem) !important;
+    }
+    .letter-line {
+      font-size: clamp(1rem, 1.15vw, 1.35rem) !important;
+      line-height: 2 !important;
+    }
+    .letter-line .handwritten {
+      font-size: 1.18em !important;
+    }
+    .choice-label {
+      font-size: clamp(0.95rem, 1.05vw, 1.2rem) !important;
+    }
+    .choice-btn {
+      font-size: clamp(0.92rem, 1.05vw, 1.15rem) !important;
+      padding: clamp(0.5rem, 0.7vw, 0.85rem) clamp(0.95rem, 1.1vw, 1.4rem) !important;
+    }
+    .choice-reply {
+      font-size: clamp(0.95rem, 1.05vw, 1.15rem) !important;
+    }
+    .btn-magic,
+    .btn-back {
+      font-size: clamp(1rem, 1.1vw, 1.25rem) !important;
+      padding: clamp(0.7rem, 0.85vw, 1rem) clamp(1.8rem, 2vw, 2.6rem) !important;
     }
 
     /* ========== 背景：同目录 bg.jpg + 虚化 ========== */
@@ -255,10 +656,13 @@
       backface-visibility: hidden;
       transition: filter 1s ease, transform 1s ease;
       will-change: transform;
-      transform: translate(var(--intro-dx, 0), var(--intro-dy, 0));
+      transform-origin: 0 0;
+      transform: translate(var(--intro-dx, 0), var(--intro-dy, 0)) scale(var(--intro-scale, 1));
     }
-    /* 拖拽时关闭位移过渡，否则拖起来很沉 */
-    .intro-pan.dragging .intro-pan-content {
+    /* 拖拽/滚轮/缩放时关闭位移过渡，操作更跟手 */
+    .intro-pan.dragging .intro-pan-content,
+    .intro-pan.zooming .intro-pan-content,
+    .intro-pan.wheeling .intro-pan-content {
       transition: filter 1s ease;
     }
     .intro-pan-content .pan-bg-img {
@@ -278,9 +682,10 @@
       cursor: grab;
     }
     .intro-pan.dragging .intro-pan-handle { cursor: grabbing; }
-    /* 仅点击门口后、淡出时临时虚化 */
+    /* 仅点击门口后、淡出时临时虚化（保持中心放大，忽略用户缩放） */
     .intro.blurring .intro-pan-content {
       filter: blur(12px);
+      transform-origin: 50% 50%;
       transform: translate(var(--intro-dx, 0), var(--intro-dy, 0)) scale(1.08);
     }
 
@@ -513,7 +918,14 @@
       -webkit-backface-visibility: hidden;
       backface-visibility: hidden;
       will-change: transform;
-      transform: translate(var(--room-dx, 0), var(--room-dy, 0));
+      transform-origin: 0 0;
+      transition: transform 0.18s cubic-bezier(.2,.8,.2,1);
+      transform: translate(var(--room-dx, 0), var(--room-dy, 0)) scale(var(--room-scale, 1));
+    }
+    .room-pan.dragging .room-pan-content,
+    .room-pan.zooming .room-pan-content,
+    .room-pan.wheeling .room-pan-content {
+      transition: none;
     }
     .room-pan-content .pan-bg-img {
       position: absolute;
@@ -624,7 +1036,7 @@
       }
     }
 
-    /* ========== 留言墙：热区（虚线框已隐藏）+ 墙上装饰 + 弹窗 ========== */
+    /* ========== 留言墙：热区（虚线框已隐藏）+ 墙上手写挂牌 + 弹窗 ========== */
     .msg-hotspot {
       position: absolute;
       top: var(--msg-top, 62%);
@@ -634,73 +1046,164 @@
       cursor: pointer;
       z-index: 1;
       box-sizing: border-box;
-      font-size: 0.85rem;
-      color: var(--text-soft);
       display: flex;
       align-items: center;
       justify-content: center;
-      text-align: center;
+      -webkit-tap-highlight-color: transparent;
     }
-    .msg-hotspot-deco {
-      position: absolute;
-      inset: 5%;
+    /* 挂牌外壳：顶部小钉 + 细绳 + 纸笺主体 */
+    .msg-plaque-wrap {
+      position: relative;
+      width: min(86%, 280px);
+      height: min(92%, 220px);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-end;
       pointer-events: none;
     }
-    /* 零散表情：🌼🎀🍀⭐ 重复铺满区域，不同位置与大小、略旋转 */
-    .msg-emoji {
+    /* 小钉头：挂牌顶部固定点 */
+    .msg-plaque-pin {
       position: absolute;
-      font-style: normal;
-      line-height: 1;
+      top: 2%;
+      left: 50%;
+      width: clamp(6px, 1vw, 10px);
+      height: clamp(6px, 1vw, 10px);
+      transform: translateX(-50%);
+      border-radius: 50%;
+      background:
+        radial-gradient(circle at 30% 30%, #f3d9a8, #8a6130 55%, #3a2410 100%);
+      box-shadow: 0 1px 2px rgba(0,0,0,.5), 0 0 0 1px rgba(30,15,0,.3);
+      z-index: 2;
+    }
+    /* 细麻绳：从小钉延伸到挂牌顶部 */
+    .msg-plaque-rope {
+      position: absolute;
+      top: 4%;
+      left: 50%;
+      width: 2px;
+      height: 16%;
+      transform: translateX(-50%) rotate(2deg);
+      transform-origin: top center;
+      background: linear-gradient(180deg, rgba(90,60,30,.9), rgba(140,100,60,.7));
+      border-radius: 2px;
+      box-shadow: 0 0 2px rgba(0,0,0,.3);
       pointer-events: none;
     }
-    .msg-emoji--1 { left: 5%; top: 8%; font-size: 1em; transform: rotate(-12deg); }
-    .msg-emoji--2 { left: 22%; top: 5%; font-size: 1.15em; transform: rotate(6deg); }
-    .msg-emoji--3 { left: 45%; top: 10%; font-size: 0.9em; transform: rotate(-4deg); }
-    .msg-emoji--4 { right: 25%; top: 6%; font-size: 1.1em; transform: rotate(8deg); }
-    .msg-emoji--5 { right: 5%; top: 12%; font-size: 1.2em; transform: rotate(-6deg); }
-    .msg-emoji--6 { left: 8%; top: 32%; font-size: 0.95em; transform: rotate(4deg); }
-    .msg-emoji--7 { left: 35%; top: 28%; font-size: 1.25em; transform: rotate(-7deg); }
-    .msg-emoji--8 { right: 30%; top: 30%; font-size: 0.85em; transform: rotate(5deg); }
-    .msg-emoji--9 { right: 8%; top: 35%; font-size: 1.05em; transform: rotate(-3deg); }
-    .msg-emoji--10 { left: 12%; bottom: 32%; font-size: 1em; transform: rotate(7deg); }
-    .msg-emoji--11 { left: 40%; bottom: 35%; font-size: 1.15em; transform: rotate(-5deg); }
-    .msg-emoji--12 { right: 18%; bottom: 30%; font-size: 0.9em; transform: rotate(4deg); }
-    .msg-emoji--13 { right: 5%; bottom: 25%; font-size: 1.2em; transform: rotate(-8deg); }
-    .msg-emoji--14 { left: 5%; bottom: 8%; font-size: 1.1em; transform: rotate(3deg); }
-    .msg-emoji--15 { left: 28%; bottom: 10%; font-size: 0.95em; transform: rotate(-6deg); }
-    .msg-emoji--16 { left: 52%; bottom: 12%; font-size: 1.05em; transform: rotate(2deg); }
-    .msg-emoji--17 { right: 12%; bottom: 10%; font-size: 0.9em; transform: rotate(-4deg); }
-    .msg-emoji--18 { left: 18%; top: 50%; font-size: 1em; transform: rotate(6deg); }
-    .msg-emoji--19 { right: 22%; top: 48%; font-size: 1.1em; transform: rotate(-5deg); }
-    .msg-emoji--20 { left: 50%; top: 50%; font-size: 0.85em; transform: rotate(3deg); }
-    .msg-hotspot:hover .msg-emoji {
-      filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.15));
+    /* 纸笺主体 */
+    .msg-plaque {
+      position: relative;
+      width: 100%;
+      flex: 1 1 auto;
+      max-height: 82%;
+      margin-top: 18%;
+      padding: clamp(8px, 1.2vw, 18px) clamp(10px, 1.4vw, 20px);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0.35em;
+      pointer-events: auto;
+      background:
+        radial-gradient(ellipse at 22% 18%, rgba(255,255,255,.55), transparent 55%),
+        radial-gradient(ellipse at 78% 88%, rgba(120,75,35,.18), transparent 65%),
+        linear-gradient(158deg, #f3e5c2 0%, #eadba0 45%, #d6bc7e 100%);
+      border: 1px solid rgba(120, 80, 40, 0.4);
+      border-radius: 4px;
+      box-shadow:
+        0 1px 0 rgba(255,255,255,.55) inset,
+        0 -2px 6px rgba(80,50,20,.18) inset,
+        0 3px 8px rgba(0,0,0,.22),
+        0 10px 24px rgba(0,0,0,.28);
+      transform: rotate(-1.6deg);
+      transform-origin: top center;
+      transition: transform 0.4s cubic-bezier(.2,.8,.2,1.1), box-shadow 0.35s ease;
     }
-    /* 留言墙提示气泡 */
-    .msg-hotspot-bubble {
-      position: absolute;
-      top: -10px;
-      right: -10px;
-      transform: translateY(-100%) translateX(0);
-      margin-top: -8px;
-      margin-right: -4px;
-      padding: 0.45rem 0.75rem;
-      font-family: 'Ma Shan Zheng', 'Zhi Mang Xing', cursive;
-      font-size: 0.85rem;
-      color: var(--text);
-      background: rgba(220, 210, 235, 0.96);
-      border-radius: 10px;
-      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
-      white-space: nowrap;
-      pointer-events: none;
-    }
-    .msg-hotspot-bubble::after {
+    /* 纸张纤维叠加 */
+    .msg-plaque::before {
       content: '';
       position: absolute;
-      top: 100%;
-      right: 12px;
-      border: 6px solid transparent;
-      border-top-color: rgba(220, 210, 235, 0.96);
+      inset: 0;
+      border-radius: inherit;
+      background-image:
+        repeating-linear-gradient(42deg, rgba(120,80,40,.04) 0 2px, transparent 2px 6px),
+        repeating-linear-gradient(-55deg, rgba(120,80,40,.035) 0 1px, transparent 1px 4px);
+      mix-blend-mode: multiply;
+      pointer-events: none;
+      border-radius: 4px;
+    }
+    /* 左上角微微翘起的阴影 */
+    .msg-plaque::after {
+      content: '';
+      position: absolute;
+      left: -2px;
+      top: -2px;
+      width: 22%;
+      height: 22%;
+      background: linear-gradient(135deg, rgba(0,0,0,.12), transparent 70%);
+      border-top-left-radius: 4px;
+      pointer-events: none;
+    }
+    .msg-plaque-title {
+      font-family: 'Ma Shan Zheng', 'Zhi Mang Xing', cursive;
+      font-size: clamp(0.95rem, 2.2vw, 1.7rem);
+      color: #4a2c14;
+      line-height: 1.1;
+      letter-spacing: 0.12em;
+      text-shadow: 0 1px 0 rgba(255,255,255,.45), 0 1px 2px rgba(80,40,10,.22);
+      position: relative;
+      z-index: 1;
+    }
+    .msg-plaque-sub {
+      font-family: 'Zhi Mang Xing', 'Ma Shan Zheng', cursive;
+      font-size: clamp(0.65rem, 1.2vw, 0.9rem);
+      color: #7d522a;
+      letter-spacing: 0.18em;
+      opacity: 0.82;
+      position: relative;
+      z-index: 1;
+    }
+    /* 右下角小红印 */
+    .msg-plaque-seal {
+      position: absolute;
+      right: 8%;
+      bottom: 8%;
+      width: clamp(18px, 3vw, 28px);
+      height: clamp(18px, 3vw, 28px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Ma Shan Zheng', serif;
+      font-size: clamp(0.55rem, 1vw, 0.85rem);
+      color: #fff4ec;
+      background:
+        radial-gradient(circle at 30% 28%, rgba(210,70,55,.92), rgba(150,30,25,.95) 65%, rgba(110,15,15,.9) 100%);
+      border-radius: 3px;
+      box-shadow:
+        inset 0 0 0 1px rgba(255,255,255,.18),
+        inset 0 0 4px rgba(80,0,0,.4),
+        0 1px 2px rgba(0,0,0,.3);
+      transform: rotate(7deg);
+      opacity: 0.92;
+      z-index: 1;
+    }
+    /* 悬停：挂牌轻摆 + 上浮 */
+    .msg-hotspot:hover .msg-plaque {
+      animation: msgPlaqueSway 2.4s ease-in-out infinite;
+      box-shadow:
+        0 1px 0 rgba(255,255,255,.6) inset,
+        0 -2px 6px rgba(80,50,20,.18) inset,
+        0 6px 14px rgba(0,0,0,.28),
+        0 18px 34px rgba(0,0,0,.3);
+    }
+    @keyframes msgPlaqueSway {
+      0%, 100% { transform: rotate(-1.6deg) translateY(-2px); }
+      50%      { transform: rotate(-0.4deg) translateY(-4px); }
+    }
+    .msg-hotspot:active .msg-plaque {
+      transform: rotate(-1deg) translateY(0) scale(0.98);
+      transition: transform 0.12s ease;
+      animation: none;
     }
     /* 留言墙弹窗：居中 + 半透明遮罩 */
     .msg-modal {
@@ -741,57 +1244,70 @@
     .msg-header {
       flex-shrink: 0;
       padding: 1rem 1.25rem;
-      border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+      border-bottom: none;
       display: flex;
       align-items: center;
       justify-content: space-between;
+      position: relative;
+    }
+    .msg-header::after {
+      content: '';
+      position: absolute;
+      left: 1.25rem;
+      right: 1.25rem;
+      bottom: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(42, 31, 24, 0.28) 20%, rgba(42, 31, 24, 0.28) 80%, transparent);
     }
     .msg-title {
       font-family: 'Ma Shan Zheng', 'Zhi Mang Xing', cursive;
-      font-size: 1.15rem;
-      color: var(--text);
+      font-size: 1.4rem;
+      color: var(--ink);
+      letter-spacing: 0.15em;
+      text-shadow: 0 1px 0 rgba(255, 248, 225, 0.45);
     }
     .msg-close {
       width: 32px;
       height: 32px;
       padding: 0;
-      border: none;
+      border: 1px solid transparent;
       background: transparent;
-      color: var(--text-soft);
+      color: var(--ink-soft);
       font-size: 1.5rem;
       line-height: 1;
       cursor: pointer;
-      border-radius: 8px;
-      transition: background 0.2s ease, color 0.2s ease, transform 0.2s ease;
+      border-radius: 50%;
+      transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
     }
     .msg-close:hover {
-      background: rgba(0, 0, 0, 0.06);
-      color: var(--text);
-      transform: scale(1.05);
+      background: rgba(184, 53, 44, 0.1);
+      color: var(--cinnabar);
+      border-color: rgba(184, 53, 44, 0.4);
+      transform: rotate(90deg);
     }
 
-    /* 留言列表：可滚动 + 气泡样式 */
+    /* 留言列表：可滚动 + 宣纸小笺样式 */
     .msg-list-wrap {
       flex: 1;
       min-height: 200px;
       max-height: 320px;
       overflow-y: auto;
       padding: 1rem;
-      background: rgba(0, 0, 0, 0.02);
+      background: transparent;
     }
     .msg-list-wrap::-webkit-scrollbar {
-      width: 8px;
+      width: 6px;
     }
     .msg-list-wrap::-webkit-scrollbar-track {
-      background: rgba(0, 0, 0, 0.04);
-      border-radius: 4px;
+      background: rgba(80, 50, 20, 0.06);
+      border-radius: 3px;
     }
     .msg-list-wrap::-webkit-scrollbar-thumb {
-      background: rgba(0, 0, 0, 0.15);
-      border-radius: 4px;
+      background: rgba(80, 50, 20, 0.3);
+      border-radius: 3px;
     }
     .msg-list-wrap::-webkit-scrollbar-thumb:hover {
-      background: rgba(0, 0, 0, 0.25);
+      background: var(--cinnabar);
     }
     .msg-list {
       list-style: none;
@@ -799,13 +1315,37 @@
       padding: 0;
     }
     .msg-bubble {
-      margin-bottom: 0.75rem;
-      padding: 0.6rem 1rem;
-      background: linear-gradient(135deg, #f5f0f8 0%, #ebe5f2 100%);
-      border-radius: 14px;
-      border: 1px solid rgba(0, 0, 0, 0.05);
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+      position: relative;
+      margin-bottom: 0.85rem;
+      padding: 0.7rem 1rem 0.85rem;
+      background:
+        radial-gradient(ellipse at 18% 15%, rgba(255, 252, 232, 0.8), transparent 55%),
+        linear-gradient(160deg, #fbf1d2 0%, #f0dda5 100%);
+      border: 1px solid rgba(80, 50, 20, 0.22);
+      border-radius: 3px;
+      box-shadow:
+        0 1px 2px rgba(80, 50, 20, 0.16),
+        0 4px 10px rgba(80, 50, 20, 0.12);
       word-break: break-word;
+      transform: rotate(-0.3deg);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    .msg-bubble:nth-child(even) { transform: rotate(0.35deg); }
+    .msg-bubble:hover {
+      transform: rotate(0deg) translateY(-1px);
+      box-shadow:
+        0 2px 4px rgba(80, 50, 20, 0.2),
+        0 8px 18px rgba(80, 50, 20, 0.18);
+    }
+    /* 每条留言左侧一条细墨线,像抄录纸的边 */
+    .msg-bubble::before {
+      content: '';
+      position: absolute;
+      left: 0.4rem;
+      top: 0.7rem;
+      bottom: 0.7rem;
+      width: 1px;
+      background: linear-gradient(180deg, transparent, rgba(42, 31, 24, 0.35) 15%, rgba(42, 31, 24, 0.35) 85%, transparent);
     }
     .msg-bubble-text {
       font-size: 0.95rem;
@@ -874,10 +1414,20 @@
     .msg-input-row {
       flex-shrink: 0;
       padding: 1rem 1.25rem;
-      border-top: 1px solid rgba(0, 0, 0, 0.06);
+      border-top: none;
       display: flex;
       gap: 0.6rem;
       align-items: center;
+      position: relative;
+    }
+    .msg-input-row::before {
+      content: '';
+      position: absolute;
+      left: 1.25rem;
+      right: 1.25rem;
+      top: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(42, 31, 24, 0.28) 20%, rgba(42, 31, 24, 0.28) 80%, transparent);
     }
     .msg-input {
       flex: 1;
@@ -1937,26 +2487,14 @@
         <div class="photo2-hotspot" id="photo2Hotspot" aria-label="照片"></div>
         <div class="firework-hotspot" id="fireworkHotspot" aria-label="点击放烟花"></div>
         <div class="msg-hotspot" id="msgHotspot" aria-label="留言墙">
-          <span class="msg-hotspot-bubble">留言墙，请点击</span>
-          <div class="msg-hotspot-deco" aria-hidden="true">
-            <span class="msg-emoji msg-emoji--1">✨</span>
-            <span class="msg-emoji msg-emoji--2">🌸</span>
-            <span class="msg-emoji msg-emoji--3">💌</span>
-            <span class="msg-emoji msg-emoji--4">🦋</span>
-            <span class="msg-emoji msg-emoji--5">💕</span>
-            <span class="msg-emoji msg-emoji--6">🌷</span>
-            <span class="msg-emoji msg-emoji--7">🌼</span>
-            <span class="msg-emoji msg-emoji--8">🎀</span>
-            <span class="msg-emoji msg-emoji--9">🍀</span>
-            <span class="msg-emoji msg-emoji--10">⭐</span>
-            <span class="msg-emoji msg-emoji--11">🌼</span>
-            <span class="msg-emoji msg-emoji--12">🎀</span>
-            <span class="msg-emoji msg-emoji--13">🍀</span>
-            <span class="msg-emoji msg-emoji--14">⭐</span>
-            <span class="msg-emoji msg-emoji--15">🌼</span>
-            <span class="msg-emoji msg-emoji--16">🎀</span>
-            <span class="msg-emoji msg-emoji--17">🍀</span>
-            <span class="msg-emoji msg-emoji--18">⭐</span>
+          <div class="msg-plaque-wrap" aria-hidden="true">
+            <span class="msg-plaque-pin"></span>
+            <span class="msg-plaque-rope"></span>
+            <div class="msg-plaque">
+              <span class="msg-plaque-title">留言墙</span>
+              <span class="msg-plaque-sub">留下几句吧</span>
+              <span class="msg-plaque-seal">印</span>
+            </div>
           </div>
         </div>
       </div>
@@ -1996,7 +2534,7 @@
             <button type="button" class="weather-geo-btn" id="weatherGeoBtn" title="定位">📍 定位</button>
           </div>
           <div class="weather-result" id="weatherResult" role="status" aria-live="polite">
-            <p class="weather-loading" id="weatherLoading">正在获取天气...</p>
+            <p class="weather-loading" id="weatherLoading" hidden>正在获取天气...</p>
             <div class="weather-data" id="weatherData" hidden>
               <div class="weather-current-row" id="weatherCurrentRow" hidden>
                 <p class="weather-icon-row weather-icon" id="weatherIcon" aria-hidden="true"></p>
@@ -2374,53 +2912,97 @@
       }
 
       /**
-       * 按 cover 规则计算内容尺寸，使整图可被拖拽浏览；拖拽范围限制在内容与视口内，不露空白。
-       * handleEl = 仅在此层按下时开始拖拽（门口/信封在上一层，点它们不会触发拖拽）；panEl 用于 capture 和 dragging 样式
-       * options = { extraStartEls: [el, ...], onTapWhenStartOn: function(targetEl) {} } 可选；extraStartEls 上按下也可开始拖拽背景，若未移动则视为点击并调用 onTapWhenStartOn(targetEl)
+       * 按 cover 规则计算内容尺寸，使整图可被拖拽浏览；拖拽/滚动/缩放范围限制在内容与视口内，不露空白。
+       * 交互：
+       *   - 左键单击短按：识别为点击（派发到 onTapWhenStartOn）
+       *   - 左键按住并移动（>5px）：拖动背景
+       *   - 滚轮：上下滚动背景（deltaY>0 向下看）
+       *   - Ctrl + 滚轮：以鼠标位置为锚点缩放背景（1.0~3.0）
        */
       function makePannable(panEl, handleEl, contentEl, imgEl, dxKey, dyKey, options) {
         var opts = options || {};
         var extraStartEls = opts.extraStartEls || [];
         var onTapWhenStartOn = opts.onTapWhenStartOn || function () {};
+        var scaleKey = opts.scaleKey || null;
+        var MIN_SCALE = 1;
+        var MAX_SCALE = 3;
         var DRAG_THRESHOLD = 5;
-        var pos = { dx: 0, dy: 0 };
+        var WHEEL_PAN_SPEED = 1;
+        var WHEEL_ZOOM_SPEED = 0.0018;
+        var pos = { dx: 0, dy: 0, s: 1 };
         var start = { x: 0, y: 0, dx: 0, dy: 0, target: null };
         var hasMoved = false;
+        var cover = { w: 0, h: 0 };
         var bounds = { minTx: 0, maxTx: 0, minTy: 0, maxTy: 0 };
+        var wheelingTimer = null;
+        var zoomingTimer = null;
 
-        function getBounds() {
+        function computeCoverSize() {
           var vw = panEl.clientWidth;
           var vh = panEl.clientHeight;
           var nw = imgEl.naturalWidth;
           var nh = imgEl.naturalHeight;
-          if (!nw || !nh) return { minTx: 0, maxTx: 0, minTy: 0, maxTy: 0 };
-          var contentW = Math.max(vw, vh * nw / nh);
-          var contentH = Math.max(vh, vw * nh / nw);
-          contentEl.style.width = contentW + 'px';
-          contentEl.style.height = contentH + 'px';
-          return {
-            minTx: vw - contentW,
-            maxTx: 0,
-            minTy: vh - contentH,
-            maxTy: 0
-          };
+          if (!nw || !nh || !vw || !vh) { cover.w = 0; cover.h = 0; return; }
+          cover.w = Math.max(vw, vh * nw / nh);
+          cover.h = Math.max(vh, vw * nh / nw);
+          contentEl.style.width = cover.w + 'px';
+          contentEl.style.height = cover.h + 'px';
         }
 
-        function updateBoundsAndClamp() {
-          bounds = getBounds();
+        function recomputeBounds() {
+          var vw = panEl.clientWidth;
+          var vh = panEl.clientHeight;
+          var cw = cover.w * pos.s;
+          var ch = cover.h * pos.s;
+          bounds.minTx = Math.min(0, vw - cw);
+          bounds.maxTx = 0;
+          bounds.minTy = Math.min(0, vh - ch);
+          bounds.maxTy = 0;
+        }
+
+        function clampPos() {
           pos.dx = Math.max(bounds.minTx, Math.min(bounds.maxTx, pos.dx));
           pos.dy = Math.max(bounds.minTy, Math.min(bounds.maxTy, pos.dy));
-          applyTransform();
         }
 
         function applyTransform() {
           contentEl.style.setProperty(dxKey, pos.dx + 'px');
           contentEl.style.setProperty(dyKey, pos.dy + 'px');
+          if (scaleKey) contentEl.style.setProperty(scaleKey, pos.s.toFixed(4));
+        }
+
+        function updateAll() {
+          computeCoverSize();
+          recomputeBounds();
+          clampPos();
+          applyTransform();
+        }
+
+        /* hotspot 命中检测：判断 target 是否在 extraStartEls 里 */
+        function findHotspot(target) {
+          if (!target) return null;
+          for (var i = 0; i < extraStartEls.length; i++) {
+            var el = extraStartEls[i];
+            if (el && (el === target || el.contains(target))) return el;
+          }
+          return null;
+        }
+
+        /* 350ms 去重，防止 pointerup 与原生 click 双触发 */
+        var lastTapAt = 0;
+        function fireTap(hit, point) {
+          var now = Date.now();
+          if (now - lastTapAt < 350) return;
+          lastTapAt = now;
+          onTapWhenStartOn(hit, point);
         }
 
         function onPointerDown(e) {
           if (e.button !== undefined && e.button !== 0) return;
-          e.preventDefault();
+          /* 关键：在 hotspot 上不要 preventDefault，否则浏览器原生 click 会被压掉，
+             一旦 pointerup 路径出问题（如设备微抖被判成拖动），点击就完全失灵 */
+          var onHotspot = !!findHotspot(e.target);
+          if (!onHotspot) e.preventDefault();
           panEl.classList.add('dragging');
           start.x = e.clientX;
           start.y = e.clientY;
@@ -2428,7 +3010,8 @@
           start.dy = pos.dy;
           start.target = e.target;
           hasMoved = false;
-          if (e.pointerId !== undefined) {
+          /* 在 hotspot 上不要立刻 setPointerCapture，否则 click 不会派发到 hotspot 自己 */
+          if (!onHotspot && e.pointerId !== undefined) {
             try { panEl.setPointerCapture(e.pointerId); } catch (_) {}
           }
           document.addEventListener('pointermove', onPointerMove);
@@ -2438,9 +3021,17 @@
         function onPointerMove(e) {
           var dx = e.clientX - start.x;
           var dy = e.clientY - start.y;
-          if (!hasMoved && (Math.abs(dx) > DRAG_THRESHOLD || Math.abs(dy) > DRAG_THRESHOLD)) hasMoved = true;
-          pos.dx = Math.max(bounds.minTx, Math.min(bounds.maxTx, start.dx + dx));
-          pos.dy = Math.max(bounds.minTy, Math.min(bounds.maxTy, start.dy + dy));
+          if (!hasMoved && (Math.abs(dx) > DRAG_THRESHOLD || Math.abs(dy) > DRAG_THRESHOLD)) {
+            hasMoved = true;
+            /* 真正开始拖动时再补上 capture，确保拖出 hotspot 后仍能跟随 */
+            if (e.pointerId !== undefined) {
+              try { panEl.setPointerCapture(e.pointerId); } catch (_) {}
+            }
+          }
+          if (!hasMoved) return;
+          pos.dx = start.dx + dx;
+          pos.dy = start.dy + dy;
+          clampPos();
           applyTransform();
         }
         function onPointerUp(e) {
@@ -2452,24 +3043,63 @@
           document.removeEventListener('pointerup', onPointerUp);
           document.removeEventListener('pointercancel', onPointerUp);
           if (!hasMoved && start.target) {
-            var hit = extraStartEls.filter(function (el) { return el && (el === start.target || el.contains(start.target)); })[0];
-            if (hit) onTapWhenStartOn(hit, { x: start.x, y: start.y });
+            var hit = findHotspot(start.target);
+            if (hit) fireTap(hit, { x: start.x, y: start.y });
+          }
+        }
+
+        function onWheel(e) {
+          if (!cover.w || !cover.h) return;
+          e.preventDefault();
+          var rect = panEl.getBoundingClientRect();
+          var mx = e.clientX - rect.left;
+          var my = e.clientY - rect.top;
+          if (e.ctrlKey || e.metaKey) {
+            var oldS = pos.s;
+            var factor = Math.exp(-e.deltaY * WHEEL_ZOOM_SPEED);
+            var newS = Math.max(MIN_SCALE, Math.min(MAX_SCALE, oldS * factor));
+            if (newS === oldS) return;
+            pos.dx = mx - (mx - pos.dx) * (newS / oldS);
+            pos.dy = my - (my - pos.dy) * (newS / oldS);
+            pos.s = newS;
+            recomputeBounds();
+            clampPos();
+            applyTransform();
+            panEl.classList.add('zooming');
+            if (zoomingTimer) clearTimeout(zoomingTimer);
+            zoomingTimer = setTimeout(function () { panEl.classList.remove('zooming'); }, 180);
+          } else {
+            pos.dy -= e.deltaY * WHEEL_PAN_SPEED;
+            if (e.deltaX) pos.dx -= e.deltaX * WHEEL_PAN_SPEED;
+            clampPos();
+            applyTransform();
+            panEl.classList.add('wheeling');
+            if (wheelingTimer) clearTimeout(wheelingTimer);
+            wheelingTimer = setTimeout(function () { panEl.classList.remove('wheeling'); }, 180);
           }
         }
 
         if (imgEl.complete && imgEl.naturalWidth) {
-          updateBoundsAndClamp();
+          updateAll();
         } else {
-          imgEl.addEventListener('load', updateBoundsAndClamp);
+          imgEl.addEventListener('load', updateAll);
         }
-        window.addEventListener('resize', updateBoundsAndClamp);
+        window.addEventListener('resize', updateAll);
         handleEl.addEventListener('pointerdown', onPointerDown);
         extraStartEls.forEach(function (el) {
-          if (el) el.addEventListener('pointerdown', onPointerDown);
+          if (!el) return;
+          el.addEventListener('pointerdown', onPointerDown);
+          /* click 兜底：即使 pointerup 路径异常，原生 click 仍能触发；fireTap 350ms 内去重，避免重复 */
+          el.addEventListener('click', function (ev) {
+            if (hasMoved) return;
+            fireTap(el, { x: ev.clientX, y: ev.clientY });
+          });
         });
+        panEl.addEventListener('wheel', onWheel, { passive: false });
       }
 
       makePannable(introPan, document.getElementById('introPanHandle'), introPanContent, document.getElementById('introPanImg'), '--intro-dx', '--intro-dy', {
+        scaleKey: '--intro-scale',
         extraStartEls: ['note1Hotspot', 'note2Hotspot', 'note3Hotspot', 'note4Hotspot', 'doorHotspot'].map(function (id) { return document.getElementById(id); }).filter(Boolean),
         onTapWhenStartOn: function (targetEl, _point) {
           var id = targetEl.id;
@@ -2502,6 +3132,7 @@
         }
       });
       makePannable(roomPan, document.getElementById('roomPanHandle'), roomPanContent, document.getElementById('roomPanImg'), '--room-dx', '--room-dy', {
+        scaleKey: '--room-scale',
         extraStartEls: [envelopeHotspot, document.getElementById('photo2Hotspot'), document.getElementById('fireworkHotspot'), document.getElementById('msgHotspot')].filter(Boolean),
         onTapWhenStartOn: function (targetEl, point) {
           var id = targetEl.id;
@@ -3117,6 +3748,10 @@
           this.loadingEl.textContent = '正在获取天气...';
         };
 
+        WeatherWidget.prototype._hideLoading = function () {
+          if (this.loadingEl) this.loadingEl.hidden = true;
+        };
+
         WeatherWidget.prototype._showLoadingGeocode = function () {
           this.loadingEl.hidden = false;
           this.dataEl.hidden = true;
@@ -3160,7 +3795,7 @@
           code = code != null ? Number(code) : 0;
           if (isNaN(code)) code = 0;
           var info = parseWeatherCode(code);
-          this.loadingEl.hidden = true;
+          this._hideLoading();
           this.errorEl.hidden = true;
           this.dataEl.hidden = false;
           if (this.iconEl) {
@@ -3187,6 +3822,9 @@
 
         WeatherWidget.prototype._showForecast = function (daily) {
           if (!daily || !daily.time || !daily.weathercode || !daily.temperature_2m_max || !daily.temperature_2m_min) return;
+          this._hideLoading();
+          if (this.errorEl) this.errorEl.hidden = true;
+          if (this.dataEl) this.dataEl.hidden = false;
           var weekDays = ['日', '一', '二', '三', '四', '五', '六'];
           var html = '';
           var days = Math.min(5, daily.time.length);
@@ -3262,6 +3900,8 @@
           if (!c || !maxArr || !minArr) return;
           var n = Math.min(5, maxArr.length, minArr.length);
           if (n < 2) return;
+          this._hideLoading();
+          if (this.dataEl) this.dataEl.hidden = false;
           if (this.chartTitleEl) this.chartTitleEl.textContent = '未来五天天气预报 - ' + (this.currentCity || '');
           this._chartMax = maxArr.slice(0, n);
           this._chartMin = minArr.slice(0, n);
